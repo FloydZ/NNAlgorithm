@@ -6,13 +6,13 @@ Setup
 -----
 Arch Linux
 ```bash
-sudo pacman -S hdf5 gtest
+sudo pacman -S gtest
 ```
 
 Ubuntu:
 You need to follow [this](https://gist.github.com/Cartexius/4c437c084d6e388288201aadf9c8cdd5) guide to install the googletest suite.
 ```bash
-sudo apt install hdf5lib gtest
+sudo apt install gtest
 ```
 
 Build:
