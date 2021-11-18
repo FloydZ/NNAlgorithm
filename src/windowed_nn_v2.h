@@ -24,7 +24,7 @@ class WindowedNearestNeighbor2 : public NearestNeighbor {
 
 	// translate a block level into actual bit limits.
 	constexpr void get_window(uint64_t *k_lower, uint64_t *k_higher, const uint64_t current_r){
-		// Only Useful during debugging. Its equal to: Match on all coordinates.
+		// Only Useful during debugging. It's equal to: Match on all coordinates.
 		if (current_r == -1){
 			*k_lower = 0;
 			*k_higher = n;
@@ -88,15 +88,17 @@ public:
 #if defined(ALL_DELTA)
 			if ((b <= dk) && (ctr != i)){
 #else
-			if ((b >= dk-epsilon) && (b <= dk+epsilon) && (ctr != i)){
+			if ((b >= dk-epsilon) && (b <= dk+epsilon) && (ctr != i)) {
 #endif
-				tmp = L[start+ctr];
-				L[start+ctr] = L[i];
-				L[i] = tmp;
+				std::swap(L[start+ctr], L[i]);
+//				tmp = L[start+ctr];
+//				L[start+ctr] = L[i];
+//				L[i] = tmp;
 
 				ctr += 1;
 			}
 		}
+
 		if (ctr != 0)
 			ctr -= 1;
 
@@ -214,12 +216,13 @@ private:
 			return 0;
 
 		// fallback to naive NN algorithm if threshold is reached.
-		if (((new_end1 - new_start1) < THRESHHOLD) || ((new_end2 - new_start2) < THRESHHOLD)){
+		if (((new_end1 - new_start1) < THRESHHOLD) ||
+		    ((new_end2 - new_start2) < THRESHHOLD)) {
 			return quadratic_NN(new_start1, new_end1, new_start2, new_end2, gold1, gold2);
 		}
 
 		// max depth is reached. Switch to naive search
-		if (current_r == r-1){
+		if (current_r == r-1) {
 			return quadratic_NN(new_start1, new_end1, new_start2, new_end2, gold1, gold2);
 		}
 

@@ -55,9 +55,9 @@ Run Our Benchmarks
 For $n=64$ run:
 ```bash
 cd build
-./test/nn/nn_golden_64 -gtest_filter=GoldenNearestNeighbor_64_10.Windowed:GoldenNearestNeighbor_64_10/*.Windowed:*/GoldenNearestNeighbor_64_10
-./test/nn/nn_golden_64 -gtest_filter=GoldenNearestNeighbor_64_15.Windowed:GoldenNearestNeighbor_64_15/*.Windowed:*/GoldenNearestNeighbor_64_15
-./test/nn/nn_golden_64 -gtest_filter=GoldenNearestNeighbor_64_20.Windowed:GoldenNearestNeighbor_64_20/*.Windowed:*/GoldenNearestNeighbor_64_20
+./test/nn/nn_golden_64 --gtest_filter=GoldenNearestNeighbor_64_10.Windowed:GoldenNearestNeighbor_64_10/*.Windowed:*/GoldenNearestNeighbor_64_10
+./test/nn/nn_golden_64 --gtest_filter=GoldenNearestNeighbor_64_15.Windowed:GoldenNearestNeighbor_64_15/*.Windowed:*/GoldenNearestNeighbor_64_15
+./test/nn/nn_golden_64 --gtest_filter=GoldenNearestNeighbor_64_20.Windowed:GoldenNearestNeighbor_64_20/*.Windowed:*/GoldenNearestNeighbor_64_20
 ./test/nn/nn_golden_64 --gtest_filter=GoldenNearestNeighbor_64_10.WindowedWithEpsilon:GoldenNearestNeighbor_64_10/*.WindowedWithEpsilon:*/GoldenNearestNeighbor_64_10
 ./test/nn/nn_golden_64 --gtest_filter=GoldenNearestNeighbor_64_15.WindowedWithEpsilon:GoldenNearestNeighbor_64_15/*.WindowedWithEpsilon:*/GoldenNearestNeighbor_64_15
 ./test/nn/nn_golden_64 --gtest_filter=GoldenNearestNeighbor_64_20.WindowedWithEpsilon:GoldenNearestNeighbor_64_20/*.WindowedWithEpsilon:*/GoldenNearestNeighbor_64_20
@@ -66,9 +66,9 @@ cd build
 For $n=128$ run:
 ```bash
 cd build
-./test/nn/nn_golden_64 -gtest_filter=GoldenNearestNeighbor_128_10.Windowed:GoldenNearestNeighbor_128_10/*.Windowed:*/GoldenNearestNeighbor_128_10
-./test/nn/nn_golden_64 -gtest_filter=GoldenNearestNeighbor_128_15.Windowed:GoldenNearestNeighbor_128_15/*.Windowed:*/GoldenNearestNeighbor_128_15
-./test/nn/nn_golden_64 -gtest_filter=GoldenNearestNeighbor_128_20.Windowed:GoldenNearestNeighbor_128_20/*.Windowed:*/GoldenNearestNeighbor_128_20
+./test/nn/nn_golden_64 --gtest_filter=GoldenNearestNeighbor_128_10.Windowed:GoldenNearestNeighbor_128_10/*.Windowed:*/GoldenNearestNeighbor_128_10
+./test/nn/nn_golden_64 --gtest_filter=GoldenNearestNeighbor_128_15.Windowed:GoldenNearestNeighbor_128_15/*.Windowed:*/GoldenNearestNeighbor_128_15
+./test/nn/nn_golden_64 --gtest_filter=GoldenNearestNeighbor_128_20.Windowed:GoldenNearestNeighbor_128_20/*.Windowed:*/GoldenNearestNeighbor_128_20
 ./test/nn/nn_golden_64 --gtest_filter=GoldenNearestNeighbor_128_10.WindowedWithEpsilon:GoldenNearestNeighbor_128_10/*.WindowedWithEpsilon:*/GoldenNearestNeighbor_128_10
 ./test/nn/nn_golden_64 --gtest_filter=GoldenNearestNeighbor_128_15.WindowedWithEpsilon:GoldenNearestNeighbor_128_15/*.WindowedWithEpsilon:*/GoldenNearestNeighbor_128_15
 ./test/nn/nn_golden_64 --gtest_filter=GoldenNearestNeighbor_128_20.WindowedWithEpsilon:GoldenNearestNeighbor_128_20/*.WindowedWithEpsilon:*/GoldenNearestNeighbor_128_20
@@ -76,9 +76,9 @@ cd build
 For $n=256$ run:
 ```bash
 cd build
-./test/nn/nn_golden_64 -gtest_filter=GoldenNearestNeighbor_256_10.Windowed:GoldenNearestNeighbor_256_10/*.Windowed:*/GoldenNearestNeighbor_256_10
-./test/nn/nn_golden_64 -gtest_filter=GoldenNearestNeighbor_256_15.Windowed:GoldenNearestNeighbor_256_15/*.Windowed:*/GoldenNearestNeighbor_256_15
-./test/nn/nn_golden_64 -gtest_filter=GoldenNearestNeighbor_256_20.Windowed:GoldenNearestNeighbor_256_20/*.Windowed:*/GoldenNearestNeighbor_256_20
+./test/nn/nn_golden_64 --gtest_filter=GoldenNearestNeighbor_256_10.Windowed:GoldenNearestNeighbor_256_10/*.Windowed:*/GoldenNearestNeighbor_256_10
+./test/nn/nn_golden_64 --gtest_filter=GoldenNearestNeighbor_256_15.Windowed:GoldenNearestNeighbor_256_15/*.Windowed:*/GoldenNearestNeighbor_256_15
+./test/nn/nn_golden_64 --gtest_filter=GoldenNearestNeighbor_256_20.Windowed:GoldenNearestNeighbor_256_20/*.Windowed:*/GoldenNearestNeighbor_256_20
 ./test/nn/nn_golden_64 --gtest_filter=GoldenNearestNeighbor_256_10.WindowedWithEpsilon:GoldenNearestNeighbor_256_10/*.WindowedWithEpsilon:*/GoldenNearestNeighbor_256_10
 ./test/nn/nn_golden_64 --gtest_filter=GoldenNearestNeighbor_256_15.WindowedWithEpsilon:GoldenNearestNeighbor_256_15/*.WindowedWithEpsilon:*/GoldenNearestNeighbor_256_15
 ./test/nn/nn_golden_64 --gtest_filter=GoldenNearestNeighbor_256_20.WindowedWithEpsilon:GoldenNearestNeighbor_256_20/*.WindowedWithEpsilon:*/GoldenNearestNeighbor_256_20
@@ -87,4 +87,4 @@ cd build
 Project Hierarchy
 -----
 The code of our algorithm is in the directory `src/*`. 
-All the fundemantal data functionality, e.g. compare, xor, ... is implemented in `container.h` In `nn.h` is an implementation of the naive quadratic search and some helper functions. Our Algorithm is implemented in `windowed_nn_v2.h` in the class `WindowedNearestNeighbor2` which inherits from `NearestNeighbor` which implements the quadratic search. 
+All the fundamental data functionality, e.g. compare, xor, ... is implemented in `container.h` In `nn.h` is an implementation of the naive quadratic search and some helper functions. Our Algorithm is implemented in `windowed_nn_v2.h` in the class `WindowedNearestNeighbor2` which inherits from `NearestNeighbor` which implements the quadratic search. 
