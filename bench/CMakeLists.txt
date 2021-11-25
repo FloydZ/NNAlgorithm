@@ -5,5 +5,3 @@ foreach(benchfile ${BENCH_SOURCES})
     add_executable(bench_b63_${file} ${benchfile} )
     target_link_libraries(bench_b63_${file} m -lgtest -pthread )
 endforeach(benchfile ${BENCH_SOURCES})
-
-add_subdirectory(b63)
