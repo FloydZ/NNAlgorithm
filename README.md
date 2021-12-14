@@ -1,6 +1,6 @@
 About 
 -----
-This repository contains a header only implementation of the paper "A faster algorithm for finding closet pairs in hamming metric". 
+This repository contains a header only implementation of the paper [A faster algorithm for finding closet pairs in hamming metric](https://arxiv.org/abs/2102.02597). 
 
 Setup
 -----
