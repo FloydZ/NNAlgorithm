@@ -54,8 +54,7 @@ TEST(OptimizeWindowed2, Blub) {
 			// TODO started Win2E listsize: 32768 w: 20 r: 10 N: 127 d: 32 epsilon: 1 schmiert ab n = 100
 			for (uint64_t epsilon = 0; epsilon < 1; ++epsilon) {
 				for (uint64_t threshhold = 10; threshhold < 60; threshhold += 10) {
-
-					// r = 1 ist halt richtig kacke.
+					// r = 1 is not really good
 					// be very careful by the choice of r
 					for (uint64_t r = 2; r < 3; r += 5) {
 						int64_t d_ = uint64_t(n * NearestNeighbor::H1(1. - double(lam)));

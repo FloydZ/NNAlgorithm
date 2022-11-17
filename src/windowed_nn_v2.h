@@ -9,7 +9,6 @@
 #include "nn.h"
 
 class WindowedNearestNeighbor2 : public NearestNeighbor {
-
 	// Additional parameters which are not defined in the base class.
 	const double d_;        // delta/n
 	const uint64_t k;       // n/r BlockSize
@@ -91,9 +90,9 @@ public:
 			if ((b >= dk-epsilon) && (b <= dk+epsilon) && (ctr != i)) {
 #endif
 				std::swap(L[start+ctr], L[i]);
-//				tmp = L[start+ctr];
-//				L[start+ctr] = L[i];
-//				L[i] = tmp;
+				//tmp = L[start+ctr];
+				//L[start+ctr] = L[i];
+				//L[i] = tmp;
 
 				ctr += 1;
 			}

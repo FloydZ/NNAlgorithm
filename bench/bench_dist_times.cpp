@@ -10,7 +10,7 @@ using ::testing::TestPartResult;
 using ::testing::UnitTest;
 
 // This file will be automatically generated if you run `cd bench && python gen.py -o options2.h -b bench.csv`
-#include "options2.h"
+#include "options.h"
 
 #ifndef ITERS
 #define ITERS   1

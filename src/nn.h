@@ -168,9 +168,11 @@ public:
 		return true;
 	}
 public:
+	// Sol container
 	std::vector<NNContainer> sols_1, sols_2;
 
-	// returns the best parameter choice for (r,N,d) for given (m,w,lam), where lam is the proportional list size.
+	// returns the best parameter choice for (r,N,d) for given (m,w,lam),
+	// where lam is the proportional list size.
 	static void optimal_params_blockwise(const uint64_t n, const uint64_t w, const double lam,
 					    uint64_t *r, uint64_t *N, uint64_t *d) {
 		*r = (lam*n/log2(n));
@@ -184,6 +186,11 @@ public:
 
 		double q = calc_q(n, double(w)/double(n), double(*d)/double(n));
 		*N = uint64_t (n/q);
+	}
+	
+	// optimal params
+	static void optimal_params(const uint64_t n, const uint64_t w, const double lam,
+					    uint64_t *r, uint64_t *N, uint64_t *d) {
 	}
 
 	// perform an stupid slow quadratic in List size NN search. just for debugging.

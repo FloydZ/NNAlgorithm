@@ -17,7 +17,7 @@ using ::testing::TestInfo;
 using ::testing::TestPartResult;
 using ::testing::UnitTest;
 
-#include "tests.cpp"
+#include "tests.c++"
 
 int main(int argc, char **argv) {
 	srand(0);
