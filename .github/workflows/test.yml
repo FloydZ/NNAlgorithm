@@ -33,3 +33,25 @@ jobs:
         ./test_binary_container_cmp
         ./test_nn
         ./test_nn_golden
+        ./container100
+        ./container128
+        ./container200
+        ./container256
+        ./container40
+        ./container64
+        ./dist_nn_golden_100
+        ./dist_nn_golden_128
+        ./dist_nn_golden_200
+        ./dist_nn_golden_250
+        ./dist_nn_golden_256
+        ./dist_nn_golden_40
+        ./dist_nn_golden_64
+        ./nn_golden_100
+        ./nn_golden_128
+        ./nn_golden_200
+        ./nn_golden_250
+        ./nn_golden_256
+        ./nn_golden_32
+        ./nn_golden_40
+        ./nn_golden_64
+        
