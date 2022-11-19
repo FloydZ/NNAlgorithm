@@ -4,6 +4,7 @@ project(nn_code)
 set(CMAKE_CXX_STANDARD 17)
 # set(CMAKE_VERBOSE_MAKEFILE ON)
 
+include_directories("benchmark/include")
 include_directories("deps/b63/src")
 include_directories("deps")
 include_directories("src")
