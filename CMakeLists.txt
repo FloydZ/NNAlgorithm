@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 project(nn_code)
 
 set(CMAKE_CXX_STANDARD 17)
-# set(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_VERBOSE_MAKEFILE ON)
 
 include_directories("benchmark/include")
 include_directories("deps/b63/src")
