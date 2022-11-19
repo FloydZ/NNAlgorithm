@@ -28,30 +28,31 @@ jobs:
 
     - name: Test
       working-directory: ${{github.workspace}}/build
-      run: ./optimize_nn
-        ./test_binary_container
-        ./test_binary_container_cmp
-        ./test_nn
-        ./test_nn_golden
-        ./container100
-        ./container128
-        ./container200
-        ./container256
-        ./container40
-        ./container64
-        ./dist_nn_golden_100
-        ./dist_nn_golden_128
-        ./dist_nn_golden_200
-        ./dist_nn_golden_250
-        ./dist_nn_golden_256
-        ./dist_nn_golden_40
-        ./dist_nn_golden_64
-        ./nn_golden_100
-        ./nn_golden_128
-        ./nn_golden_200
-        ./nn_golden_250
-        ./nn_golden_256
-        ./nn_golden_32
-        ./nn_golden_40
-        ./nn_golden_64
+      run: 
+        ./test/optimize_nn
+        ./test/test_binary_container
+        ./test/test_binary_container_cmp
+        ./test/test_nn
+        ./test/test_nn_golden
+        ./test/container/container100
+        ./test/container/container128
+        ./test/container/container200
+        ./test/container/container256
+        ./test/container/container40
+        ./test/container/container64
+        ./test/distribution/dist_nn_golden_100
+        ./test/distribution/dist_nn_golden_128
+        ./test/distribution/dist_nn_golden_200
+        ./test/distribution/dist_nn_golden_250
+        ./test/distribution/dist_nn_golden_256
+        ./test/distribution/dist_nn_golden_40
+        ./test/distribution/dist_nn_golden_64
+        ./test/nn/nn_golden_100
+        ./test/nn/nn_golden_128
+        ./test/nn/nn_golden_200
+        ./test/nn/nn_golden_250
+        ./test/nn/nn_golden_256
+        ./test/nn/nn_golden_32
+        ./test/nn/nn_golden_40
+        ./test/nn/nn_golden_64
         
