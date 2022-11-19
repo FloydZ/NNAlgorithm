@@ -56,3 +56,29 @@ jobs:
         ./test/nn/nn_golden_40
         ./test/nn/nn_golden_64
         
+  benchmark:
+    name: Run benchmarks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Cache Benchmark library
+        uses: actions/cache@v1
+        with:
+          path: bench
+          key: ${{ runner.os }}-googlebenchmark-v1.5.0
+
+      - name: Run benchmark
+        run: ./a.out --benchmark_format=json | tee benchmark_result.json
+
+      - name: Store benchmark result
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: C++ Benchmark
+          tool: 'googlecpp'
+          output-file-path: bench/benchmark_result.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
+          alert-threshold: '200%'
+          comment-on-alert: true
+          fail-on-alert: true
+          alert-comment-cc-users: '@FloydZ'

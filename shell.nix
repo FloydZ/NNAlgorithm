@@ -5,7 +5,7 @@ stdenv.mkDerivation {
   name = "nnalgorithm";
   src = ./.;
 
-  buildInputs = [ git gtest gnumake cmake clang ];
+  buildInputs = [ git gtest gbenchmark gnumake cmake clang ];
 
   # buildPhase = "c++ -o main main.cpp -lPocoFoundation -lboost_system";
 
