@@ -80,8 +80,7 @@ jobs:
       - name: Run benchmark (get data)
         working-directory: ${{github.workspace}}/build
         run: 
-          make bench_b63_gbench
-          ./bench/bench_b63_gbench --benchmark_format=json | tee benchmark_result.json
+          make bench_b63_gbench && ./bench/bench_b63_gbench --benchmark_format=json | tee benchmark_result.json
 
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
