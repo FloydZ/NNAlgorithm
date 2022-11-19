@@ -20,6 +20,7 @@ jobs:
         sudo apt-get install libgtest-dev && cd /usr/src/gtest && sudo cmake CMakeLists.txt && sudo make && sudo cp lib/libgtest.a /usr/lib  && sudo cp lib/libgtest_main.a /usr/lib && sudo ln -s /usr/lib/libgtest.a /usr/local/lib/libgtest.a && sudo ln -s /usr/lib/libgtest_main.a /usr/local/lib/libgtest_main.a
     
     - uses: actions/checkout@v3
+
     - name: Cache Benchmark library
       uses: actions/cache@v1
       with:
@@ -72,6 +73,9 @@ jobs:
         with:
           path: bench
           key: ${{ runner.os }}-googlebenchmark-v1.5.0
+
+      - name: Configure CMake
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
       - name: Run benchmark (get data)
         working-directory: ${{github.workspace}}/build
