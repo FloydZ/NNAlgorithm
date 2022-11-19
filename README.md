@@ -84,6 +84,7 @@ cd build
 ./test/nn/nn_golden_64 --gtest_filter=GoldenNearestNeighbor_256_20.WindowedWithEpsilon:GoldenNearestNeighbor_256_20/*.WindowedWithEpsilon:*/GoldenNearestNeighbor_256_20
 ```
 
+or see [here](https://floydz.github.io/NNAlgorithm/dev/bench/)
 Project Hierarchy
 -----
 The code of our algorithm is in the directory `src/*`. 
