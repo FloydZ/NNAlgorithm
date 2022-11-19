@@ -21,11 +21,8 @@ jobs:
     
     - uses: actions/checkout@v3
 
-    - name: Cache Benchmark library
-      uses: actions/cache@v1
-      with:
-        path: bench
-        key: ${{ runner.os }}-googlebenchmark-v1.5.0
+    - name: Create Benchmark library
+      run: git clone --depth=1 --single-branch --branch v1.5.0 https://github.com/google/benchmark.git benchmark && git clone --depth=1 --single-branch --branch release-1.10.0 https://github.com/google/googletest.git benchmark/googletest && cd ./benchmark/build &&  cmake -DCMAKE_BUILD_TYPE=Release -DBENCHMARK_ENABLE_TESTING=true ../ && make -j
 
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
