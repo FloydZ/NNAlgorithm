@@ -33,5 +33,5 @@ static void BM_quad(benchmark::State& state) {
 }
 
 
-BENCHMARK(BM_quad)->Setup(setup)->;
+BENCHMARK(BM_quad)->Setup(setup);
 BENCHMARK_MAIN();
