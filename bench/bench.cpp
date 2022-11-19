@@ -15,7 +15,7 @@
 #include "windowed_nn_v2.h"
 #include "indyk_motwani.h"
 
-static __inline__ uint64_t __rdtsc(void) {
+static __inline__ uint64_t ____rdtsc(void) {
     unsigned long long int x;
     __asm__ volatile (".byte 0x0f, 0x31" : "=A" (x));
     // broken for 64-bit builds; don't copy this code
@@ -25,7 +25,7 @@ static __inline__ uint64_t __rdtsc(void) {
 uint64_t cycles(void) { // Access system counter for benchmarking
 #if (OS_TARGET == OS_WIN) && (TARGET == TARGET_AMD64 || TARGET == TARGET_x86)
 
-	return __rdtsc();
+	return ____rdtsc();
 #elif (OS_TARGET == OS_WIN) && (TARGET == TARGET_ARM)
 	return __rdpmccntr64();
 #elif (OS_TARGET == OS_LINUX) && (TARGET == TARGET_AMD64 || TARGET == TARGET_x86)
