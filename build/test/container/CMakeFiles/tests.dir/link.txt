@@ -1,1 +1,0 @@
-/nix/store/lsyzzki1iv9gwk4vdss7i1cjxrnxling-gcc-wrapper-11.3.0/bin/g++ CMakeFiles/tests.dir/tests.cpp.o -o tests  -lgtest -pthread -lm 

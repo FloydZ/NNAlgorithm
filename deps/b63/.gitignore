@@ -1,6 +1,0 @@
-# vim
-*.swp
-
-# build folder
-_build/
-examples/_build/
