@@ -17,9 +17,14 @@ jobs:
     steps:
     - name: Install gtest
       run:
-        sudo apt-get install libgtest-dev && cd /usr/src/gtest && sudo cmake CMakeLists.txt && sudo make && sudo cp lib/libgtest.a /usr/lib  && sudo cp lib/libgtest_main.a /usr/lib && sudo ln -s /usr/lib/libgtest.a /usr/local/lib/libgtest.a && sudo ln -s /usr/lib/libgtest_main.a /usr/local/lib/libgtest_main.a && sudo apt-get install gbenchmark
+        sudo apt-get install libgtest-dev && cd /usr/src/gtest && sudo cmake CMakeLists.txt && sudo make && sudo cp lib/libgtest.a /usr/lib  && sudo cp lib/libgtest_main.a /usr/lib && sudo ln -s /usr/lib/libgtest.a /usr/local/lib/libgtest.a && sudo ln -s /usr/lib/libgtest_main.a /usr/local/lib/libgtest_main.a
     
     - uses: actions/checkout@v3
+    - name: Cache Benchmark library
+      uses: actions/cache@v1
+      with:
+        path: bench
+        key: ${{ runner.os }}-googlebenchmark-v1.5.0
 
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
@@ -68,8 +73,11 @@ jobs:
           path: bench
           key: ${{ runner.os }}-googlebenchmark-v1.5.0
 
-      - name: Run benchmark
-        run: ./a.out --benchmark_format=json | tee benchmark_result.json
+      - name: Run benchmark (get data)
+        working-directory: ${{github.workspace}}/build
+        run: 
+          make bench_b63_gbench
+          ./bench/bench_b63_gbench --benchmark_format=json | tee benchmark_result.json
 
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
