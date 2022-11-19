@@ -69,7 +69,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Create Benchmark library
-        run: mkdir build && git clone --depth=1 --single-branch --branch v1.7.1 https://github.com/google/benchmark.git benchmark && mkdir -p benchmark/build && cd ./benchmark/build &&  cmake -DCMAKE_BUILD_TYPE=Release -DBENCHMARK_ENABLE_GTEST_TESTS=OFF ../ && make -j
+        run: git clone --depth=1 --single-branch --branch v1.7.1 https://github.com/google/benchmark.git benchmark && mkdir -p benchmark/build && cd ./benchmark/build &&  cmake -DCMAKE_BUILD_TYPE=Release -DBENCHMARK_ENABLE_GTEST_TESTS=OFF ../ && make -j
 
       - name: Configure CMake
         run: cd build && cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
