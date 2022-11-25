@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1668891926813,
+  "lastUpdate": 1669374745891,
   "repoUrl": "https://github.com/FloydZ/NNAlgorithm",
   "entries": {
     "gBenchmark": [
@@ -56,6 +56,36 @@ window.BENCHMARK_DATA = {
             "value": 132423.4083942444,
             "unit": "ns/iter",
             "extra": "iterations: 4241\ncpu: 132400.8488564018 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "11518727+FloydZ@users.noreply.github.com",
+            "name": "FloydZ",
+            "username": "FloydZ"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ee4da3e5262fbb5213a7c176a9340e4d770c37b9",
+          "message": "Update README.md",
+          "timestamp": "2022-11-25T12:11:19+01:00",
+          "tree_id": "e1bc4fe08d6081d582e3ad83986f76296a6b2960",
+          "url": "https://github.com/FloydZ/NNAlgorithm/commit/ee4da3e5262fbb5213a7c176a9340e4d770c37b9"
+        },
+        "date": 1669374744989,
+        "tool": "googlecpp",
+        "benches": [
+          {
+            "name": "BM_quad",
+            "value": 80873.20359869293,
+            "unit": "ns/iter",
+            "extra": "iterations: 9170\ncpu: 80857.58996728464 ns\nthreads: 1"
           }
         ]
       }
