@@ -40,12 +40,16 @@ def H1(value: float):
     # approximate inverse binary entropy function
     steps = [0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001, 0.0000001, 0.00000001, 0.0000000001, 0.0000000000001, 0.000000000000001]
     r = 0.000000000000000000000000000000001
+    if value < 0.:
+        value = 0.
 
     for step in steps:
         i = r
         while (i + step < 1.0) and (HH(i) < value):
             i += step
-
+            
+        if step > i:
+            break
         r = i - step
 
     return r
@@ -230,12 +234,18 @@ def runtime_estimator(d):
     fields = ["lam", "w", "r", "d", "N", "epsilon", "t"]
 
     key = list(d.keys())[0] # = n
-    lam_ = d[key]['lam'][0]
-    w_ = d[key]['w'][0]
+    key_ = int(key)
+    lam_ = d[key]['lam'][0]/key_
+    w_ = d[key]['w'][0]/key_
 
+    Hi2 = H1(1. - (lam_))
+    w_star =2*Hi2*(1-Hi2)
     n_datasets = sum([len(d[key][s]) for s in fields])
-
-    n, lam, w, r, N, d, q, w_star = optimal_parameter_set(int(key), lam_, w_)
+    
+    # TODO over all input values
+    #n, lam, w, r, N, d, q, w_star = optimal_parameter_set(int(key), lam_, w_)
+    n, lam, w, r, N, d, q, w_star = key_, lam_, w_, \
+        d[key]["r"][0], d[key]["N"][0], d[key]["d"][0], 0, 0
     delta_star = H1(1. - lam)
 
     if w <= w_star:
@@ -262,9 +272,9 @@ def bench_dist(outfile, benchfile):
         "32": {
             "lam": [15],
             "gam": [0.1, 0.2, 0.3, 0.4, 0.5],
-            "w": [i for i in range(0, 17, 4)],
+            "w": [17],
             "r": [2],
-            "d": [i for i in range(6, 15, 2)],
+            "d": [60],
             "N": [10, 50, 100, 500],
             "epsilon": [1],
             "t": [50],
@@ -301,7 +311,7 @@ def bench_dist(outfile, benchfile):
         },
     }
 
-    epsilon = 1 # TODODODODODODODODO VERYYY IMPORTANT TODO
+    epsilon = 1
     for n in ["128"]:   #n_dict.keys():
         for lam in n_dict[n]['lam']:
             list_size =  1<<lam
@@ -358,6 +368,8 @@ def optimal_parameter_set(n: int, lam: float, w: float):
     :param w: w*n
     :return:
     """
+
+    assert(w < 1)
     r = lam*n/(math.log2(n))
     Hi= H1(1. - (lam))
     Hi2= H1(1. - (lam))
@@ -365,7 +377,7 @@ def optimal_parameter_set(n: int, lam: float, w: float):
     w_star =2*Hi2*(1-Hi2)
     print("w", w_star, w)
     if w > w_star:
-        d = 1/2 * (1 - math.sqrt(1-2*w))
+        d = 1/2. * (1 - math.sqrt(1-2*w))
     else:
         d = Hi
 
@@ -444,9 +456,9 @@ if __name__ == "__main__":
 
     if args.runtime:
         n_dict = {
-            "64": {
-                "lam": [15],
-                "w": [i for i in range(4, 33, 4)],
+            "256": {
+                "lam": [25],
+                "w": [17],
                 "r": [2],
                 "d": [i for i in range(20, 33, 2)],
                 "N": [50, 100, 500],
@@ -454,6 +466,7 @@ if __name__ == "__main__":
                 "t": [10, 100, 1000],
             }
         }
+
         runtime_estimator(n_dict)
 
     if args.dist:
