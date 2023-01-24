@@ -23,7 +23,7 @@ const uint64_t size = (1u << 20u);
 const uint64_t THRESHHOLD = 10;
 */
 
-const bool find_all = true;
+const bool find_all = false;
 
 #include "windowed_nn_v2.h"
 #include "indyk_motwani.h"
@@ -134,8 +134,8 @@ void bench_window2() {
 }
 
 int main() {
-	// bench_quad();
-	// bench_indyk();
+	bench_quad();
+	bench_indyk();
 	bench_window2();
 	return 0;
 }

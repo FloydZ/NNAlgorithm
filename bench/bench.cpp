@@ -151,7 +151,7 @@ void bench_window2() {
 int main() {
 	// Dont waste your time:
 	// bench_quad();
-	bench_indyk();
+	// bench_indyk();
 	bench_window2();
 	return 0;
 }

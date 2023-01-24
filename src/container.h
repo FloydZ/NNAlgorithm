@@ -1,7 +1,7 @@
 #ifndef NN_CODE_CONTAINER_H
 #define NN_CODE_CONTAINER_H
 
-#include <cstdint>
+#include <stdint.h>
 #include <sys/random.h>
 #include "helper.h"
 
