@@ -1,3 +1,6 @@
 [submodule "deps/b63"]
 	path = deps/b63
 	url = https://github.com/okuvshynov/b63
+[submodule "deps/benchmark"]
+	path = deps/benchmark
+	url = https://github.com/google/benchmark

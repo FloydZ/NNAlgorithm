@@ -5,8 +5,11 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 # only for the CI
-include_directories("benchmark/include")
-link_directories("benchmark/build/src")
+set(BENCHMARK_ENABLE_GTEST_TESTS 0)
+set(BENCHMARK_ENABLE_TESTING 0)
+add_subdirectory(deps/benchmark)
+#include_directories("deps/benchmark/include")
+#link_directories("deps/benchmark/build/src")
 
 include_directories("deps/b63/src")
 include_directories("deps")

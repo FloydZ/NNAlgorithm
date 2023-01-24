@@ -1,6 +1,7 @@
-#include "benchmark/benchmark.h"
+#include <benchmark/benchmark.h>
 #include <stdint.h>
 #include <inttypes.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 #include "options.h"
@@ -11,12 +12,11 @@ NNList L1{1}, L2{1};
 uint64_t pos1, pos2;
 
 
-void setup(const benchmark::State& state) {
+static void do_setup(const benchmark::State& state) {
 	NearestNeighbor::create_test_lists(L1, L2, TEST_BASE_LIST_SIZE, w, pos1, pos2);
 }
 
 void bench_quad() {
-
 	const NNContainer gold1 = L1[pos1];
 	const NNContainer gold2 = L2[pos2];
 	NearestNeighbor nn{L1, L2, w, r, N, d};
@@ -33,5 +33,5 @@ static void BM_quad(benchmark::State& state) {
 }
 
 
-BENCHMARK(BM_quad)->Setup(setup);
+BENCHMARK(BM_quad)->Threads(1)->Setup(do_setup);
 BENCHMARK_MAIN();
