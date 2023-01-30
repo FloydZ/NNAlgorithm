@@ -16,7 +16,7 @@ stdenv.mkDerivation {
   ];
 
   # buildPhase = "c++ -o main main.cpp -lPocoFoundation -lboost_system";
-
+  LIBCLANG_PATH = "${pkgs.llvmPackages_14.libclang.lib}/lib";
   # installPhase = ''
   #  mkdir -p $out/bin
   #  cp main $out/bin/
