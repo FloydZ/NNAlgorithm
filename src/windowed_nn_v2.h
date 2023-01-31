@@ -13,8 +13,7 @@ class WindowedNearestNeighbor2 : public NearestNeighbor {
   const double d_;   // delta/n
   const uint64_t k;  // n/r BlockSize
   const uint64_t dk; // weight per block
-  const uint64_t
-      epsilon; // additional offset/variance we allow in each level to mach on.
+  const uint64_t epsilon; // additional offset/variance we allow in each level to mach on.
 
   // Array indicating the window boundaries.
   std::vector<uint64_t> buckets_windows{};
@@ -72,10 +71,23 @@ public:
 #endif
   }
 
-  void windowed_SortList(NNList &L, const NNContainer &z,
-                         const uint64_t k_lower, const uint64_t k_upper,
-                         const uint64_t start, const uint64_t end,
-                         uint64_t &new_start, uint64_t &new_end) {
+  ///
+  /// \param L
+  /// \param z
+  /// \param k_lower
+  /// \param k_upper
+  /// \param start
+  /// \param end
+  /// \param new_start
+  /// \param new_end
+  void windowed_SortList(NNList &L,
+	                     const NNContainer &z,
+                         const uint64_t k_lower,
+	                     const uint64_t k_upper,
+                         const uint64_t start,
+	                     const uint64_t end,
+                         uint64_t &new_start,
+	                     uint64_t &new_end) {
     ASSERT(L.size() > 0 && end <= L.size() && start < end &&
            k_lower < k_upper && k_upper <= n);
 
@@ -115,7 +127,6 @@ public:
 
   int NN() {
     // Reset everything.
-
     sols_1.resize(0);
     sols_2.resize(0);
 

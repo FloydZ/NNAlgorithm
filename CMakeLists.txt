@@ -28,8 +28,8 @@ set(MALLOC_LIBRARY "")
 
 # sadly we need '-march=native' even in 'DEBUG' mode. Because otherwise the code wouldn't compile.
 # for fsized-deallocation see: https://github.com/google/tcmalloc/blob/master/docs/tuning.md
-set(DEBUG_FLAGS "-g -DDEBUG -march=native ${VALUE_FLAG}")
-set(OPTIMIZE_FLAGS "-march=native -O3 -flto -DNDEBUG")
+set(DEBUG_FLAGS "-g -DDEBUG -mavx2 ${VALUE_FLAG}")
+set(OPTIMIZE_FLAGS "-march=native -O3 -funroll-loops -DNDEBUG")
 set(SANITIZER_FLAGS -fsanitize=address -fno-omit-frame-pointer)
 set(GCC_HELPER_FLAGS -fvar-tracking-assignments)
 

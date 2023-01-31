@@ -1,8 +1,7 @@
 #include "benchmark/benchmark.h"
-#include <stdint.h>
-#include <inttypes.h>
-#include <stdint.h>
-#include <stdlib.h>
+#include <cinttypes>
+#include <cstdint>
+#include <cstdlib>
 
 #include "options.h"
 #include "windowed_nn_v2.h"

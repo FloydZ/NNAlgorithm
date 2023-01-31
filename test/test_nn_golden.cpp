@@ -26,7 +26,7 @@ constexpr uint64_t d = uint64_t(0.3*G_n);
 constexpr uint64_t r = 1;
 constexpr uint64_t N = 1000;
 constexpr uint64_t THRESHHOLD = 500;
-constexpr bool find_all = true; // actually doesnt matter.
+constexpr bool find_all = true; // actually doesn't matter.
 constexpr uint64_t size = TEST_BASE_LIST_SIZE;
 constexpr uint64_t epsilon = 1;
 

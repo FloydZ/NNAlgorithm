@@ -1,7 +1,4 @@
-#include <stdint.h>
-#include <inttypes.h>
-#include <stdlib.h>
-
+#include <cstdint>
 #include "options.h"
 
 // everything else takes faaaar to loong
@@ -44,7 +41,7 @@ uint64_t cycles(void) { // Access system counter for benchmarking
 }
 
 void log(const std::string &alg, const uint64_t time, const uint64_t errc){
-	// normal human readable logging
+	// normal human-readable logging
 	//std::cout << alg << " listsize: " << TEST_BASE_LIST_SIZE << ": w: " << w << " r: " << r << " N: " << N << " d: " << d << " cycles: " << time << " err: " << errc << "=" << double(errc)/(double(ITERS*RUNS))*100.0 << "%" <<"\n";
 
 	// csv logging.

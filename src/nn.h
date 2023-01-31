@@ -219,8 +219,8 @@ public:
 					break;
 				}
 			}
-			solution_searched = sols_1.size();
 
+			solution_searched = sols_1.size();
 		}
 
 		// we dont want, that this function is optimized out in synthetic benchmarks
@@ -281,15 +281,20 @@ public:
 
 	/// creates two random lists L1, L2
 	/// pos will be position of the golden nn element with distance w
-	// If 'windowed' is set to 'true' this function ensures that the weight of every element is equally split
-	// over 'k' blocks each of length 'G_n/k'
-	static void create_test_lists(NNList &L1, NNList &L2, const uint64_t size, const uint64_t w,
-	                              uint64_t &pos1, uint64_t &pos2, const bool windowed=false, const uint64_t k = 0) {
+	/// If 'windowed' is set to 'true' this function ensures that the weight of every element is equally split
+	/// over 'k' blocks each of length 'G_n/k'
+	static void create_test_lists(NNList &L1,
+	                              NNList &L2,
+	                              const uint64_t size,
+	                              const uint64_t w,
+	                              uint64_t &pos1,
+	                              uint64_t &pos2,
+	                              const bool windowed=false,
+	                              const uint64_t k = 0) {
 		L1.clear();
 		L2.clear();
 		L1.resize(size);
 		L2.resize(size);
-
 
 		// choose random positions
 		pos1 = (NNContainer::random_limb()) % size;
