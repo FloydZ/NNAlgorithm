@@ -28,14 +28,16 @@ public:
 	// Additional parameters which are not defined in the base class.
 
 	constexpr static size_t n = 64;         // n
-	constexpr static size_t r = 1;          // number of blocks
+	constexpr static size_t r = 2;          // number of blocks
 	constexpr static size_t N = 1;          // number of list spwan
-	//constexpr static size_t LIST_SIZE = 112;// well, list size
-	constexpr static size_t LIST_SIZE = 16*1u<<15u;// well, list size
+	constexpr static size_t LIST_SIZE = 112;// well, list size
+	//constexpr static size_t LIST_SIZE = 16*1u<<15u;// well, list size
 	constexpr static double d_ = 0.1;       // delta/n
 	constexpr static uint64_t k = 32;       // n/r BlockSize
 	constexpr static uint64_t dk = 12;      // weight per block
 	constexpr static uint64_t epsilon = 0;  // additional offset/variance we allow in each level to mach on.
+	
+	constexpr static uint64_t BRUTEFORCE_THRESHHOLD = 108;
 
 	// Array indicating the window boundaries.
 	std::vector<uint64_t> buckets_windows{0, 32};
@@ -105,7 +107,7 @@ public:
 	}
 
 	/// returns a permutation that shuffles down a mask
-	__m256i shuffle_down(const uint64_t mask) {
+	__m256i shuffle_down(const uint64_t mask) const noexcept {
 		uint64_t expanded_mask = _pdep_u64(mask, 0x0101010101010101);  
 		// mask |= mask<<1 | mask<<2 | ... | mask<<7;
 		expanded_mask *= 0xFFU;  
@@ -120,6 +122,18 @@ public:
 		return shufmask;
 	}
 
+	/// same as shuffle up, but instead a compressed array is expanded according to mask
+	__m256i shuffle_up(const uint64_t mask) const noexcept {
+		uint64_t expanded_mask = mask * 0xFFU;
+
+		// the identity shuffle for vpermps, packed to one index per byte
+		const uint64_t identity_indices = 0x0706050403020100;
+		uint64_t wanted_indices = _pext_u64(identity_indices, expanded_mask);
+
+		const __m128i bytevec = _mm_cvtsi64_si128(wanted_indices);
+		const __m256i shufmask = _mm256_cvtepu8_epi32(bytevec);
+		return shufmask;
+	}
 
 	/// special popcount, which popcounts on 8 * 32u bit limbs in parallel
 	static __m256i popcount_avx2_32(const __m256i vec) noexcept {
@@ -521,7 +535,7 @@ public:
 						int m = _mm256_movemask_pd((__m256) t2);
 						if (m) {
 							const size_t jprime = j*4 + a2*4 + __builtin_ctz(m);
-							const size_t iprime = i*4 + a1*4+ __builtin_ctz(m);
+							const size_t iprime = i*4 + a1*4 + __builtin_ctz(m);
 							//std::cout << L1[iprime][0] << " " << L2[jprime][0] << " " << L2[jprime+1][0] << " " << L2[jprime-1][0] << "\n";
 							found_solution(iprime, jprime);
 						}
@@ -554,7 +568,7 @@ public:
 						m = _mm256_movemask_pd((__m256) t2);
 						if (m) {
 							const size_t jprime = j*4 + a2*4 + __builtin_ctz(m) + 1;
-							const size_t iprime = i*4 + a1*4+ __builtin_ctz(m);
+							const size_t iprime = i*4 + a1*4 + __builtin_ctz(m);
 							//std::cout << L1[iprime][0] << " " << L2[jprime][0] << " " << L2[jprime+1][0] << " " << L2[jprime-1][0] << "\n";
 							found_solution(iprime, jprime);
 						}
@@ -567,16 +581,15 @@ public:
 	/// NOTE: assumes T=uint64
 	/// \param: e1 end index
 	/// \param: random value z
+	template<const uint32_t limb=0>
 	size_t avx2_sort_nn64_on32(const size_t e1,
 					    	   const uint32_t z,
 							   Element *L) {
-		constexpr uint32_t limb = 0;
 		const size_t s1 = 0;
 		const __m256i z256 = _mm256_set1_epi32(z);
 		const __m256i mask = _mm256_set1_epi32(dk+1);
-		const __m256i offset = _mm256_setr_epi32(0, 1, 2, 3, 4, 5, 6, 7);
+		const __m256i offset = _mm256_setr_epi32(0 + limb*4, 1 + limb*4, 2 + limb*4, 3 + limb*4, 4 + limb*4, 5 + limb*4, 6 + limb*4, 7 + limb*4);
 		size_t ctr = 0;
-	
 	
 		Element *ptr = L;
 	
@@ -589,22 +602,81 @@ public:
 			const int wt = _mm256_movemask_ps((__m256) gt_mask);
 	
 			if (wt) {
+				// shuffle down
+				const uint32_t nr_cols = __builtin_popcount(wt);
 				const __m256i shuffle = shuffle_down(wt);
-				const __m256i shf_mask = _mm256_permutevar8x32_ps(gt_mask, shuffle);
-				const __m256i shf_ptr_tmp = _mm256_permutevar8x32_ps(ptr_tmp, shuffle);
-				
-				// TODO think about if this is current because it write back 64 bits: _mm256_maskstore_epi32
-				__m256i xor_tmp = _mm256_lddqu_si256((__m256i *)(L + ctr));
-				_mm256_maskstore_epi64((long long *)ptr, shf_mask, xor_tmp);
-				_mm256_maskstore_epi64((long long *)(L + ctr), shf_mask, shf_ptr_tmp);
+				const __m256i bla = _mm256_i32gather_epi64(((uint64_t *)ptr)+i, shuffle, 8);
+
+				// shuffle up
+				const __m256i tmp_data = _mm256_lddqu_si256((__m256i *)(L + ctr));
+				const __m256i shuffle_up_mask = shuffle_up(wt);
+				_mm256_maskstore_epi64(ptr + i, tmp_data, gt_mask);
+
+				//const __m256i shf_mask = _mm256_permutevar8x32_ps(gt_mask, shuffle);
+				//const __m256i shf_ptr_tmp = _mm256_permutevar8x32_ps(ptr_tmp, shuffle);
+				//__m256i xor_tmp = _mm256_lddqu_si256((__m256i *)(L + ctr));
+				//_mm256_maskstore_epi32((int *)ptr, shf_mask, xor_tmp);
+				//_mm256_maskstore_epi32((int *)(L + ctr), shf_mask, shf_ptr_tmp);
 	
-				ctr += __builtin_popcount(wt);
+				ctr += nr_cols;
 			}
 		}
 	
 	
 		return ctr;
 	}
+
+	///
+	/// \tparam level
+	/// \param e1
+	/// \param e2
+	template<const uint32_t level>
+	void avx2_nn64_on32(const size_t e1, const size_t e2) {
+		ASSERT(e1 <= LIST_SIZE);
+		ASSERT(e2 <= LIST_SIZE);
+
+		const uint32_t z = fastrandombytes_uint64();
+		const size_t new_e1 = avx2_sort_nn64_on32(e1, z, L1);
+		const size_t new_e2 = avx2_sort_nn64_on32(e2, z, L2);
+		ASSERT(new_e1 <= LIST_SIZE);
+		ASSERT(new_e2 <= LIST_SIZE);
+
+		if (new_e1 == 0 or new_e2 == 0){
+			return;
+		}
+
+		if (new_e1 < BRUTEFORCE_THRESHHOLD and new_e2 < BRUTEFORCE_THRESHHOLD) {
+			// bruteforce_avx2_64_uxv<4, 4>(0, new_e1, 0, new_e2);
+			bruteforce_avx2_64_1x1(0, new_e1, 0, new_e2);
+			return;
+		}
+		
+		if (level == 0) {
+			//bruteforce_avx2_64_uxv<4, 4>(0, new_e1, 0, new_e2);
+			bruteforce_avx2_64_1x1(0, new_e1, 0, new_e2);
+			return;
+		}
+
+		for (uint32_t i = 0; i < N; i++) {
+			avx2_nn64_on32<level-1>(new_e1, new_e2);
+
+			if (solutions_nr) {
+				break;
+			}
+		}
+	}
+
+	///
+	/// \param e1
+	/// \param e2
+	template<>
+	void avx2_nn64_on32<0>(const size_t e1, const size_t e2) {
+		ASSERT(e1 <= LIST_SIZE);
+		ASSERT(e2 <= LIST_SIZE);
+
+		bruteforce_avx2_64_1x1(0, e1, 0, e2);
+	}
+
 
 	bool run() {
 		generate_random_instance();
@@ -613,8 +685,8 @@ public:
 		//bruteforce_avx2_64(0, LIST_SIZE, 0, LIST_SIZE);
 		//bruteforce_avx2_64_1x1(0, LIST_SIZE, 0, LIST_SIZE);
 		//bruteforce_avx2_64_uxv<4,4>(0, LIST_SIZE, 0, LIST_SIZE);
-		bruteforce_avx2_64_uxv_shuffle<4,4>(0, LIST_SIZE, 0, LIST_SIZE);
-		
+		//bruteforce_avx2_64_uxv_shuffle<4,4>(0, LIST_SIZE, 0, LIST_SIZE);
+		avx2_nn64_on32<r>(LIST_SIZE, LIST_SIZE);
 		bool correct = all_solutions_correct();
 		if (solutions_nr == 0 or !correct) {
 			std::cout << "wrong\n";
