@@ -106,25 +106,25 @@ public:
 		}
 	}
 
-	/// returns a permutation that shuffles down a mask
-	__m256i shuffle_down(const uint64_t mask) const noexcept {
-		uint64_t expanded_mask = _pdep_u64(mask, 0x0101010101010101);  
-		// mask |= mask<<1 | mask<<2 | ... | mask<<7;
-		expanded_mask *= 0xFFU;  
-		// ABC... -> AAAAAAAABBBBBBBBCCCCCCCC...: replicate each bit to fill its byte
-		
-		// the identity shuffle for vpermps, packed to one index per byte
-		const uint64_t identity_indices = 0x0706050403020100;    
-		uint64_t wanted_indices = _pext_u64(identity_indices, expanded_mask);
-		
-		const __m128i bytevec = _mm_cvtsi64_si128(wanted_indices);
-		const __m256i shufmask = _mm256_cvtepu8_epi32(bytevec);
-		return shufmask;
-	}
+	/// returns a permutation that shuffles down a mask on 32bit limbs
+	/// e.g INPUT: 0b10000001
+	///				<-    256    ->
+	///    OUTPUT: [  0 ,..., 7, 0]
+	///		   MSB <-32->
+	/// 		   <-  8 limbs   ->
+	/// to apply the resulting __m256i permutation use:
+	///			const uint64_t shuffle = 0b1000001;
+	/// 		const __m256i permuted_data = _mm256_permutevar8x32_ps(data, shuffle);
+	/// \param mask bit mask. Must be smaller than 2**8
+	/// \return the permutation
+	__m256i shuffle_down_32(const uint64_t mask) const noexcept {
+		// make sure only sane inputs make it.
+		ASSERT(mask < (1u<<8u));
 
-	/// same as shuffle up, but instead a compressed array is expanded according to mask
-	__m256i shuffle_up(const uint64_t mask) const noexcept {
-		uint64_t expanded_mask = mask * 0xFFU;
+		uint64_t expanded_mask = _pdep_u64(mask, 0x0101010101010101);
+		// mask |= mask<<1 | mask<<2 | ... | mask<<7;
+		expanded_mask *= 0xFFU;
+		// ABC... -> AAAAAAAABBBBBBBBCCCCCCCC...: replicate each bit to fill its byte
 
 		// the identity shuffle for vpermps, packed to one index per byte
 		const uint64_t identity_indices = 0x0706050403020100;
@@ -133,6 +133,122 @@ public:
 		const __m128i bytevec = _mm_cvtsi64_si128(wanted_indices);
 		const __m256i shufmask = _mm256_cvtepu8_epi32(bytevec);
 		return shufmask;
+	}
+
+	/// returns a permutation that shuffles down a mask on 32bit limbs
+	/// e.g INPUT: 0b1001
+	///				<-     256   ->
+	///    OUTPUT: [  0  , 0, 3, 0]
+	///		   MSB <-64->
+	/// 		   <-  4 limbs   ->
+	/// to apply the resulting __m256i permutation use:
+	///			const uint64_t shuffle = 0b1000001;
+	/// 		const __m256i permuted_data = _mm256_permutevar4x64_pd(data, shuffle);
+	/// \param mask bit mask. Must be smaller than 2**4
+	/// \return the permutation
+	__m256i shuffle_down_64(const uint64_t mask) const noexcept {
+		// make sure only sane inputs make it.
+		ASSERT(mask < (1u<<4u));
+
+		uint64_t expanded_mask = _pdep_u64(mask, 0x0101010101010101);  
+		// mask |= mask<<1 | mask<<2 | ... | mask<<7;
+		expanded_mask *= 0xFFU;  
+		// ABC... -> AAAAAAAABBBBBBBBCCCCCCCC...: replicate each bit to fill its byte
+		
+		// the identity shuffle for vpermps, packed to one index per byte
+		const uint64_t identity_indices = 0x0706050403020100;    
+		uint64_t wanted_indices = _pext_u64(identity_indices, expanded_mask);
+
+		const __m128i bytevec = _mm_cvtsi64_si128(wanted_indices);
+		const __m256i shufmask = _mm256_cvtepu8_epi64(bytevec);
+		return shufmask;
+	}
+
+	/// pretty much the same as `shuffle_down_64` but accepts permutation mask bigger than 2**4 up to
+	/// 2**8, meaning this function returns 2 permutations for at most 2 * 4  uint64_t limbs.
+	/// \param higher
+	/// \param lower
+	/// \param mask
+	void shuffle_down_2_64(__m256i &higher, __m256i &lower, const uint64_t mask) const noexcept {
+		// make sure only sane inputs make it.
+		ASSERT(mask < (1u<<8u));
+
+		/// see the description of this magic in `shuffle_down_64`
+		uint64_t expanded_mask = _pdep_u64(mask, 0x0101010101010101);
+		expanded_mask *= 0xFFU;
+		const uint64_t identity_indices = 0x0302010003020100;
+		uint64_t wanted_indices = _pext_u64(identity_indices, expanded_mask);
+
+		const __m128i bytevec1 = _mm_cvtsi32_si128(uint16_t(wanted_indices));
+		const __m128i bytevec2 = _mm_cvtsi32_si128(uint16_t(wanted_indices >> 16));
+		lower = _mm256_cvtepu8_epi64(bytevec1);
+		higher = _mm256_cvtepu8_epi64(bytevec2);
+	}
+
+	/// same as shuffle up, but instead a compressed array is expanded according to mask
+	/// EXAMPLE: INPUT: 0b10100001
+	/// 		<-      256        ->
+	/// OUTPUT: [  2  , 0, 1, ..., 0]
+	///			<-32->
+	///			<-    8  limbs     ->
+	/// USAGE:
+	///			const uint64_t shuffle = 0b1000001;
+	/// 		const __m256i permuted_data = _mm256_permutevar8x32_ps(data, shuffle);
+	/// \param mask
+	/// \return
+	__m256i shuffle_up_32(const uint64_t mask) const noexcept {
+		ASSERT(mask < (1u<<8u));
+
+		uint64_t expanded_mask = _pdep_u64(mask, 0x0101010101010101);
+		expanded_mask *= 0xFFU;
+		const uint64_t identity_indices = 0x0706050403020100;
+		uint64_t wanted_indices = _pdep_u64(identity_indices, expanded_mask);
+
+		const __m128i bytevec = _mm_cvtsi64_si128(wanted_indices);
+		const __m256i shufmask = _mm256_cvtepu8_epi32(bytevec);
+		return shufmask;
+	}
+
+	/// same as shuffle up, but instead a compressed array is expanded according to mask
+	/// EXAMPLE: INPUT: 0b1010
+	/// 		<-     256    ->
+	/// OUTPUT: [  1  , 0, 0, 0]
+	///			<-64->
+	///			<-   4 limbs  ->
+	/// USAGE:
+	///			const uint64_t shuffle = 0b1000001;
+	/// 		const __m256i permuted_data = _mm256_permutevar4x64_pd(data, shuffle);
+	/// \param mask
+	/// \return
+	__m256i shuffle_up_64(const uint64_t mask) const noexcept {
+		ASSERT(mask < (1u<<4u));
+
+		uint64_t expanded_mask = _pdep_u64(mask, 0x0101010101010101);
+		expanded_mask *= 0xFFU;
+		const uint64_t identity_indices = 0x03020100;
+		uint64_t wanted_indices = _pdep_u64(identity_indices, expanded_mask);
+
+		const __m128i bytevec = _mm_cvtsi64_si128(wanted_indices);
+		const __m256i shufmask = _mm256_cvtepu8_epi64(bytevec);
+		return shufmask;
+	}
+
+	/// similar to `shuffle_up_64`, but instead it can shuffle up to 8 64bit
+	///	limbs in parallel. Therefore it needs to return 2 __m256i
+	/// \param mask
+	void shuffle_up_2_64(__m256i &higher, __m256i &lower, const uint64_t mask) const noexcept {
+		ASSERT(mask < (1u<<8u));
+
+		uint64_t expanded_mask = _pdep_u64(mask, 0x0101010101010101);
+		expanded_mask *= 0xFFU;
+		const uint64_t identity_indices = 0x03020100;
+		uint64_t wanted_indices1 = _pdep_u64(identity_indices, expanded_mask & ((1ul << 32u) - 1));
+		uint64_t wanted_indices2 = _pdep_u64(identity_indices, expanded_mask >> 32u);
+
+		const __m128i bytevec1 = _mm_cvtsi32_si128(wanted_indices1);
+		const __m128i bytevec2 = _mm_cvtsi32_si128(wanted_indices2);
+		lower = _mm256_cvtepu8_epi64(bytevec1);
+		higher = _mm256_cvtepu8_epi64(bytevec2);
 	}
 
 	/// special popcount, which popcounts on 8 * 32u bit limbs in parallel
@@ -596,21 +712,25 @@ public:
 		for (size_t i = s1; i < e1; i++, ptr++) {
 			const __m256i ptr_tmp = _mm256_i32gather_epi32(ptr, offset, 8);
 			const __m256i tmp = _mm256_xor_si256(ptr_tmp, z256);
-			const __m256i tmp_pop = popcount_avx2_64(tmp);
+			const __m256i tmp_pop = popcount_avx2_32(tmp);
 	
 			const __m256i gt_mask = _mm256_cmpgt_epi32(mask, tmp_pop);
 			const int wt = _mm256_movemask_ps((__m256) gt_mask);
-	
+
+			// now `wt` contains the incises of matches. Meaning if bit 1 in `wt` is set (and bit 0 not),
+			// we need to swap the second (0 indexed) uint64_t from L + ctr with the first element from L + i.
+			// The core problem is, that we need 64bit indices and not just 32bit
 			if (wt) {
 				// shuffle down
 				const uint32_t nr_cols = __builtin_popcount(wt);
-				const __m256i shuffle = shuffle_down(wt);
-				const __m256i bla = _mm256_i32gather_epi64(((uint64_t *)ptr)+i, shuffle, 8);
+				const __m256i shuffle = shuffle_down_32(wt);
+				//const __m256i bla = _mm256_i32gather_epi64(((uint64_t *)ptr)+i, shuffle, 8);
 
 				// shuffle up
 				const __m256i tmp_data = _mm256_lddqu_si256((__m256i *)(L + ctr));
-				const __m256i shuffle_up_mask = shuffle_up(wt);
-				_mm256_maskstore_epi64(ptr + i, tmp_data, gt_mask);
+				const __m256i shuffle_up_mask = shuffle_up_32(wt);
+				//_mm256_extractf128_si256()
+				//_mm256_maskstore_epi64(ptr + i, tmp_data, gt_mask);
 
 				//const __m256i shf_mask = _mm256_permutevar8x32_ps(gt_mask, shuffle);
 				//const __m256i shf_ptr_tmp = _mm256_permutevar8x32_ps(ptr_tmp, shuffle);
@@ -679,6 +799,13 @@ public:
 
 
 	bool run() {
+		//const __m256i tmpa = shuffle_down_64(0b1010);
+		//const __m256i tmpb = shuffle_up_64(0b1010);
+		//__m256i tmp1, tmp2;
+		//shuffle_down_2_64(tmp1, tmp2, 0b10100101);
+		//shuffle_up_2_64(tmp1, tmp2, 0b10100101);
+
+		//return 1;
 		generate_random_instance();
 
 		// bruteforce_avx2_32(0, LIST_SIZE, 0, LIST_SIZE);
