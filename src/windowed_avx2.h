@@ -105,6 +105,19 @@ public:
 			L2[solution_r][i] = sol[i];
 		}
 	}
+	
+	__m256i bit_mask_64(const uint64_t mask) {
+		ASSERT(mask < (1u<<8u));
+
+		uint64_t expanded_mask = _pdep_u64(mask, 0x0101010101010101);
+		expanded_mask *= 0xFFU;
+		// the identity shuffle for vpermps, packed to one index per byte
+		const uint64_t identity_indices = 0x0706050403020100;
+		uint64_t wanted_indices = identity_indices & expanded_mask;
+		const __m128i bytevec = _mm_cvtsi64_si128(wanted_indices);
+		const __m256i shufmask = _mm256_cvtepu8_epi32(bytevec);
+		return shufmask;
+	}
 
 	/// returns a permutation that shuffles down a mask on 32bit limbs
 	/// e.g INPUT: 0b10000001
@@ -706,6 +719,8 @@ public:
 		const __m256i mask = _mm256_set1_epi32(dk+1);
 		const __m256i offset = _mm256_setr_epi32(0 + limb*4, 1 + limb*4, 2 + limb*4, 3 + limb*4, 4 + limb*4, 5 + limb*4, 6 + limb*4, 7 + limb*4);
 		size_t ctr = 0;
+
+		__m256i tmp_shfl1, tmp_shfl2, tmp_shfl3, tmp_shfl4;
 	
 		Element *ptr = L;
 	
@@ -723,12 +738,23 @@ public:
 			if (wt) {
 				// shuffle down
 				const uint32_t nr_cols = __builtin_popcount(wt);
-				const __m256i shuffle = shuffle_down_32(wt);
-				//const __m256i bla = _mm256_i32gather_epi64(((uint64_t *)ptr)+i, shuffle, 8);
+				shuffle_down_2_64(tmp_shfl1, tmp_shfl2, wt);
+				const __m256i tmp_down = _mm256_i64gather_epi64(((uint64_t *)ptr)+i, tmp_shfl1, 8);
 
 				// shuffle up
 				const __m256i tmp_data = _mm256_lddqu_si256((__m256i *)(L + ctr));
-				const __m256i shuffle_up_mask = shuffle_up_32(wt);
+				shuffle_up_2_64(tmp_shfl3, tmp_shfl4, wt);
+
+				// save stuff
+				// TODO: probably i want to replace the bit mask with a look up table
+				_mm256_maskstore_epi64((uint64_t *)L + ctr, bit_mask_64(wt & 0b1111), _mm256_permute4x64_epi64(tmp_down, tmp_shfl3));
+				_mm256_maskstore_epi64((uint64_t *)L + i, gt_mask, _mm256_permute4x64_epi64(tmp_data, tmp_shfl1));
+
+				if (wt & 0b11110000) {
+					_mm256_maskstore_epi64((uint64_t *)L + ctr, bit_mask_64(wt >> 4), _mm256_permute4x64_epi64(tmp_down, tmp_shfl3));
+					_mm256_maskstore_epi64((uint64_t *)L + i, gt_mask, _mm256_permute4x64_epi64(tmp_data, tmp_shfl1));
+				}
+				// old stuff
 				//_mm256_extractf128_si256()
 				//_mm256_maskstore_epi64(ptr + i, tmp_data, gt_mask);
 
