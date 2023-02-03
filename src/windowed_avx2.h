@@ -29,15 +29,15 @@ public:
 
 	constexpr static size_t n = 64;         // n
 	constexpr static size_t r = 2;          // number of blocks
-	constexpr static size_t N = 100;          // number of list spawn
+	constexpr static size_t N = 25;          // number of list spawn
 	//constexpr static size_t LIST_SIZE = 112;// well, list size
-	constexpr static size_t LIST_SIZE = 16*1u<<10u;// well, list size
+	constexpr static size_t LIST_SIZE = 16*1u<<16u;// well, list size
 	constexpr static double d_ = 0.1;       // delta/n
 	constexpr static uint64_t k = 32;       // n/r BlockSize
-	constexpr static uint64_t dk = 12;      // weight per block
+	constexpr static uint64_t dk = 11;      // weight per block
 	constexpr static uint64_t epsilon = 0;  // additional offset/variance we allow in each level to mach on.
 	
-	constexpr static uint64_t BRUTEFORCE_THRESHHOLD = 108*10;
+	constexpr static uint64_t BRUTEFORCE_THRESHHOLD = 108*4;
 
 	// Array indicating the window boundaries.
 	std::vector<uint64_t> buckets_windows{0, 32};
@@ -377,10 +377,9 @@ public:
 	/// \param e1 end index of list 1
 	/// \param s2 start index list 2
 	/// \param e2 end index list 2
-	void bruteforce_avx2_32(const size_t s1,
-	                        const size_t e1,
-	                        const size_t s2,
+	void bruteforce_avx2_32(const size_t e1,
 	                        const size_t e2) noexcept {
+		constexpr size_t s1 = 0, s2 = 0;
 		ASSERT(e1 >= s1);
 		ASSERT(e2 >= s2);
 
@@ -423,10 +422,9 @@ public:
 	/// \param e1 end index of list 1
 	/// \param s2 start index list 2
 	/// \param e2 end index list 2
-	void bruteforce_64(const size_t s1,
-	                   const size_t e1,
-	                   const size_t s2,
+	void bruteforce_64(const size_t e1,
 	                   const size_t e2) noexcept {
+		constexpr size_t s1 = 0, s2 = 0;
 		ASSERT(e1 >= s1);
 		ASSERT(e2 >= s2);
 
@@ -447,10 +445,11 @@ public:
 	/// \param e1 end index of list 1
 	/// \param e2 end index list 2
 	void bruteforce_128(const size_t e1,
-						const size_t e2) {
-		const size_t s1 = 0;
-		const size_t s2 = 0;
-	
+						const size_t e2) {		
+		constexpr size_t s1 = 0, s2 = 0;
+		ASSERT(e1 >= s1);
+		ASSERT(e2 >= s2);
+
 		for (size_t i = s1; i < e1; i++) {
 			for (size_t j = s2; j < e2; j++) {
 				uint32_t weight = 0;
@@ -476,10 +475,9 @@ public:
 	/// \param e1 end index of list 1
 	/// \param s2 start index list 2
 	/// \param e2 end index list 2
-	void bruteforce_avx2_64(const size_t s1,
-	                        const size_t e1,
-	                        const size_t s2,
+	void bruteforce_avx2_64(const size_t e1,
 	                        const size_t e2) noexcept {
+		constexpr size_t s1 = 0, s2 = 0;
 		ASSERT(e1 >= s1);
 		ASSERT(e2 >= s2);
 
@@ -521,13 +519,13 @@ public:
 	/// \param e1 end index of list 1
 	/// \param s2 start index list 2
 	/// \param e2 end index list 2
-	void bruteforce_avx2_64_1x1(const size_t s1,
-	                            const size_t e1,
-	                            const size_t s2,
+	void bruteforce_avx2_64_1x1(const size_t e1,
 	                            const size_t e2) noexcept {
 		static_assert(ELEMENT_NR_LIMBS == 1, "wrong nr limbs");
 		static_assert(n <= 64, "wrong n");
 		static_assert(n >= 33, "wrong n");
+		
+		constexpr size_t s1 = 0, s2 = 0;
 		ASSERT(e1 >= s1);
 		ASSERT(e2 >= s2);
 
@@ -565,13 +563,13 @@ public:
 	/// \param s2 start index list 2
 	/// \param e2 end index list 2
 	template<const uint32_t u, const uint32_t v>
-	void bruteforce_avx2_64_uxv(const size_t s1,
-	                            const size_t e1,
-	                            const size_t s2,
+	void bruteforce_avx2_64_uxv(const size_t e1,
 	                            const size_t e2) noexcept {
 		static_assert(ELEMENT_NR_LIMBS == 1, "wrong nr limbs");
 		static_assert(n <= 64, "wrong n");
 		static_assert(n >= 33, "wrong n");
+
+		constexpr size_t s1 = 0, s2 = 0;
 		ASSERT(e1 >= s1);
 		ASSERT(e2 >= s2);
 
@@ -633,13 +631,13 @@ public:
 	/// \param s2 start index list 2
 	/// \param e2 end index list 2
 	template<const uint32_t u, const uint32_t v>
-	void bruteforce_avx2_64_uxv_shuffle(const size_t s1,
-	                                    const size_t e1,
-	                                    const size_t s2,
+	void bruteforce_avx2_64_uxv_shuffle(const size_t e1,
 	                                    const size_t e2) noexcept {
-		static_assert(ELEMENT_NR_LIMBS == 1, "wrong nr limbs");
-		static_assert(n <= 64, "wrong n");
-		static_assert(n >= 33, "wrong n");
+		ASSERT(ELEMENT_NR_LIMBS == 1);
+		ASSERT(n <= 64);
+		ASSERT(n >= 33);
+
+		constexpr size_t s1 = 0, s2 = 0;
 		ASSERT(e1 >= s1);
 		ASSERT(e2 >= s2);
 
@@ -778,6 +776,8 @@ public:
 		ASSERT(wt < (1u<<8u));
 
 		uint32_t nctr = 0;
+
+		#pragma unroll
 		for (uint32_t i = 0; i < 8; ++i) {
 			if (wt & 1u) {
 				std::swap(to[nctr++], from[i]);
@@ -792,22 +792,23 @@ public:
 	/// NOTE: assumes T=uint64
 	/// \param: e1 end index
 	/// \param: random value z
-	template<const uint32_t limb=0>
+	template<const uint32_t limb>
 	size_t avx2_sort_nn64_on32(const size_t e1,
 					    	   const uint32_t z,
 							   Element *L) {
-		static_assert(n <= 64, "");
-		static_assert(n > 32, "");
-		static_assert(limb <= ELEMENT_NR_LIMBS, "");
+		ASSERT(n <= 64);
+		ASSERT(n > 32);
+		ASSERT(limb <= ELEMENT_NR_LIMBS);
 
 		const size_t s1 = 0;
 		const __m256i z256 = _mm256_set1_epi32(z);
 		const __m256i mask = _mm256_set1_epi32(dk+1);
-		const __m256i offset = _mm256_setr_epi32(0 + limb*4, 1 + limb*4, 2 + limb*4, 3 + limb*4, 4 + limb*4, 5 + limb*4, 6 + limb*4, 7 + limb*4);
+		const __m256i offset = _mm256_setr_epi32(0, 1 , 2 , 3 , 4, 5, 6, 7);
 		size_t ctr = 0;
-		Element *ptr = L;
+		Element *ptr = (Element *)(((uint8_t *)L) + limb*4);
+		Element *org_ptr = L;
 	
-		for (size_t i = s1; i < (e1+7)/8; i++, ptr += 8) {
+		for (size_t i = s1; i < (e1+7)/8; i++, ptr += 8, org_ptr += 8) {
 			const __m256i ptr_tmp = _mm256_i32gather_epi32(ptr, offset, 8);
 			const __m256i tmp = _mm256_xor_si256(ptr_tmp, z256);
 			const __m256i tmp_pop = popcount_avx2_32(tmp);
@@ -819,7 +820,7 @@ public:
 			// we need to swap the second (0 indexed) uint64_t from L + ctr with the first element from L + i.
 			// The core problem is, that we need 64bit indices and not just 32bit
 			if (wt) {
-				ctr += swap_64(wt, L + ctr, ptr);
+				ctr += swap_64(wt, L + ctr, org_ptr);
 			}
 		}
 	
@@ -836,47 +837,34 @@ public:
 		ASSERT(e1 <= LIST_SIZE);
 		ASSERT(e2 <= LIST_SIZE);
 
-		const uint32_t z = fastrandombytes_uint64();
+		const uint32_t z = (uint32_t)fastrandombytes_uint64();
 		const size_t new_e2 = avx2_sort_nn64_on32<r-level>(e2, z, L2);
 		const size_t new_e1 = avx2_sort_nn64_on32<r-level>(e1, z, L1);
 		ASSERT(new_e1 <= LIST_SIZE);
 		ASSERT(new_e2 <= LIST_SIZE);
+		ASSERT(new_e1 <= e1);
+		ASSERT(new_e2 <= e2);
 
 		if (new_e1 == 0 or new_e2 == 0){
 			return;
 		}
 
-		if (new_e1 < BRUTEFORCE_THRESHHOLD and new_e2 < BRUTEFORCE_THRESHHOLD) {
-			// bruteforce_avx2_64_uxv<4, 4>(0, new_e1, 0, new_e2);
-			bruteforce_avx2_64_1x1(0, new_e1, 0, new_e2);
-			return;
-		}
-		
-		if (level == 0) {
-			//bruteforce_avx2_64_uxv<4, 4>(0, new_e1, 0, new_e2);
-			bruteforce_avx2_64_1x1(0, new_e1, 0, new_e2);
+		if ((new_e1 < BRUTEFORCE_THRESHHOLD) || (new_e2 < BRUTEFORCE_THRESHHOLD)) {
+			bruteforce_avx2_64_uxv<4, 4>(new_e1, new_e2);
+			//bruteforce_avx2_64_1x1(0, new_e1, 0, new_e2);
 			return;
 		}
 
 		for (uint32_t i = 0; i < N; i++) {
-			avx2_nn64_on32<level-1>(new_e1, new_e2);
+			avx2_nn64_on32_internal<level-1>(new_e1, new_e2);
 
 			if (solutions_nr) {
+				std::cout << level << " " << i << " " << new_e1 << " " << new_e2 <<"\n" ;
 				break;
 			}
 		}
 	}
 
-
-	template<const uint32_t level>
-	void avx2_nn64_on32(const size_t e1, const size_t e2) {
-		for (int i = 0; i < 10; ++i) {
-			avx2_nn64_on32_internal<level>(e1, e2);
-			if (solutions_nr > 0)
-				break;
-
-		}
-	}
 
 	///
 	/// \param e1
@@ -886,13 +874,27 @@ public:
 		ASSERT(e1 <= LIST_SIZE);
 		ASSERT(e2 <= LIST_SIZE);
 
-		bruteforce_avx2_64_1x1(0, e1, 0, e2);
+		//bruteforce_avx2_64_1x1(0, e1, 0, e2);
+		bruteforce_avx2_64_uxv<4, 4>(e1, e2);
+	}
+
+	template<const uint32_t level>
+	void avx2_nn64_on32(const size_t e1, const size_t e2) {
+		for (size_t i = 0; i < N; ++i) {
+			avx2_nn64_on32_internal<level>(e1, e2);
+			if (solutions_nr > 0) {
+				std::cout << "outer: " << i << "\n";
+				break;
+			}
+		}
 	}
 
 
+
 	bool run() {
+		return 0;
 		Element *ptr = (Element *) malloc(10 * sizeof(T) * ELEMENT_NR_LIMBS);
-		for (int i = 0; i < 10; ++i) {
+		for (int i = 0; i < 2; ++i) {
 			ptr[i][0] = i;
 		}
 		//const __m256i tmpa = shuffle_down_64(0b1010);
@@ -909,11 +911,11 @@ public:
 		//return 1;
 		generate_random_instance();
 
-		// bruteforce_avx2_32(0, LIST_SIZE, 0, LIST_SIZE);
-		//bruteforce_avx2_64(0, LIST_SIZE, 0, LIST_SIZE);
-		//bruteforce_avx2_64_1x1(0, LIST_SIZE, 0, LIST_SIZE);
-		//bruteforce_avx2_64_uxv<4,4>(0, LIST_SIZE, 0, LIST_SIZE);
-		//bruteforce_avx2_64_uxv_shuffle<4,4>(0, LIST_SIZE, 0, LIST_SIZE);
+		// bruteforce_avx2_32(LIST_SIZE, LIST_SIZE);
+		//bruteforce_avx2_64(LIST_SIZE, LIST_SIZE);
+		//bruteforce_avx2_64_1x1(LIST_SIZE, LIST_SIZE);
+		//bruteforce_avx2_64_uxv<4,4>(LIST_SIZE, LIST_SIZE);
+		//bruteforce_avx2_64_uxv_shuffle<4,4>(LIST_SIZE, LIST_SIZE);
 		avx2_nn64_on32<r>(LIST_SIZE, LIST_SIZE);
 		bool correct = all_solutions_correct();
 		if (solutions_nr == 0 or !correct) {
@@ -926,47 +928,56 @@ public:
 	}
 
 	uint64_t bench() {
+		random_seed(time(NULL));
 		generate_random_instance();
 		uint64_t ret = 0;
 
 		clock_t t = clock();
-		//bruteforce_64(0, LIST_SIZE, 0, LIST_SIZE);
+		//bruteforce_64(LIST_SIZE, LIST_SIZE);
 		//std::cout << "simple: " << double(clock() - t)/CLOCKS_PER_SEC << "\n";
 		//ret += solutions_nr;
+		//solutions_nr = 0;
 
-		//bruteforce_avx2_64(0, LIST_SIZE, 0, LIST_SIZE);
+		//bruteforce_avx2_64(LIST_SIZE, LIST_SIZE);
 		//std::cout << "avx_64: " << double(clock() - t)/CLOCKS_PER_SEC << "\n";
 		//ret += solutions_nr;
+		//solutions_nr = 0;
 
 		//t = clock();
-		//bruteforce_avx2_64_1x1(0, LIST_SIZE, 0, LIST_SIZE);
+		//bruteforce_avx2_64_1x1(LIST_SIZE, LIST_SIZE);
 		//std::cout << "avx_64_1x1: " << double(clock() - t)/CLOCKS_PER_SEC << "\n";
 		//ret += solutions_nr;
+		//solutions_nr = 0;
 
-		t = clock();
-		bruteforce_avx2_64_uxv<4,4>(0, LIST_SIZE, 0, LIST_SIZE);
-		std::cout << "avx_64_4x4: " << double(clock() - t)/CLOCKS_PER_SEC << "\n";
-		ret += solutions_nr;
+		//t = clock();
+		//bruteforce_avx2_64_uxv<4,4>(LIST_SIZE, LIST_SIZE);
+		//std::cout << "avx_64_4x4: " << double(clock() - t)/CLOCKS_PER_SEC << "\n";
+		//ret += solutions_nr;
+		//solutions_nr = 0;
 		
 		//t = clock();
-		//bruteforce_avx2_64_uxv<8,8>(0, LIST_SIZE, 0, LIST_SIZE);
+		//bruteforce_avx2_64_uxv<8,8>(LIST_SIZE, LIST_SIZE);
 		//std::cout << "avx_64_8x8: " << double(clock() - t)/CLOCKS_PER_SEC << "\n";
 		//ret += solutions_nr;
-
-		t = clock();
-		bruteforce_avx2_64_uxv_shuffle<4,4>(0, LIST_SIZE, 0, LIST_SIZE);
-		std::cout << "avx_64_4x4_shuffle: " << double(clock() - t)/CLOCKS_PER_SEC << "\n";
-		ret += solutions_nr;
+		//solutions_nr = 0;
 
 		//t = clock();
-		//bruteforce_avx2_64_uxv_shuffle<8,8>(0, LIST_SIZE, 0, LIST_SIZE);
+		//bruteforce_avx2_64_uxv_shuffle<4,4>(LIST_SIZE, LIST_SIZE);
+		//std::cout << "avx_64_4x4_shuffle: " << double(clock() - t)/CLOCKS_PER_SEC << "\n";
+		//ret += solutions_nr;
+		//solutions_nr = 0;
+
+		//t = clock();
+		//bruteforce_avx2_64_uxv_shuffle<8,8>(LIST_SIZE, LIST_SIZE);
 		//std::cout << "avx_64_8x8_shuffle: " << double(clock() - t)/CLOCKS_PER_SEC << "\n";
 		//ret += solutions_nr;
+		//solutions_nr = 0;
 
 		t = clock();
 		avx2_nn64_on32<r>(LIST_SIZE, LIST_SIZE);
 		std::cout << "avx2_nn64_on32<2>: " << double(clock() - t)/CLOCKS_PER_SEC << "\n";
 		ret += solutions_nr;
+		std::cout << "sols: " << solutions_nr << "\n";
 		return ret;
 	}
 };
