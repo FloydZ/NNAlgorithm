@@ -1,7 +1,9 @@
-cmake_minimum_required(VERSION 3.10)
-project(nn_code)
+cmake_minimum_required(VERSION 3.20)
+project(nn_code CXX)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
@@ -20,7 +22,7 @@ add_subdirectory(deps/benchmark)
 include_directories("deps/b63/src")
 include_directories("deps")
 include_directories("src")
-include_directories(test)
+include_directories("test")
 
 # two possible options. 'tcmalloc' is the standard google malloc implementation
 #set(MALLOC_LIBRARY tcmalloc)
@@ -28,7 +30,7 @@ set(MALLOC_LIBRARY "")
 
 # sadly we need '-march=native' even in 'DEBUG' mode. Because otherwise the code wouldn't compile.
 # for fsized-deallocation see: https://github.com/google/tcmalloc/blob/master/docs/tuning.md
-set(DEBUG_FLAGS "-g -DDEBUG -mavx2 -mbmi -mbmi2 ${VALUE_FLAG}")
+set(DEBUG_FLAGS "-g -DDEBUG -mavx2 -mavx -mbmi -mbmi2 ${VALUE_FLAG}")
 set(OPTIMIZE_FLAGS "-march=native -O3 -funroll-loops -DNDEBUG")# -fno-inline")
 set(SANITIZER_FLAGS -fsanitize=address -fno-omit-frame-pointer)
 set(GCC_HELPER_FLAGS -fvar-tracking-assignments)
