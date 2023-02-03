@@ -23,22 +23,22 @@
 #endif
 
 // good values
-//      n   N   r   dk   L      B
-//      64  25  2   11  20      432
-
+//      n   N   r  k    dk   L     B
+//      64  25  2  32   11  20    432
+//      128 50  2  64   18  14    432 
 class WindowedAVX2 {
 public:
 	// TODO well make them instantiatable via constexpr constructor
 	// Additional parameters which are not defined in the base class.
 
-	constexpr static size_t n = 64;         // n
-	constexpr static size_t r = 2;           // number of blocks
+	constexpr static size_t n = 256;         // n
+	constexpr static size_t r = 4;           // number of blocks
 	constexpr static size_t N = 50;          // number of list spawn
 	//constexpr static size_t LIST_SIZE = 112;// well, list size
-	constexpr static size_t LIST_SIZE = 16*1u<<10u;// well, list size
+	constexpr static size_t LIST_SIZE = 16*1u<<12u;// well, list size
 	constexpr static double d_ = 0.1;       // delta/n
-	constexpr static uint64_t k = 32;       // n/r BlockSize
-	constexpr static uint64_t dk = 11;      // weight per block
+	constexpr static uint64_t k = n/r;       // n/r BlockSize
+	constexpr static uint64_t dk = 26;      // weight per block
 	constexpr static uint64_t epsilon = 0;  // additional offset/variance we allow in each level to mach on.
 	
 	constexpr static uint64_t BRUTEFORCE_THRESHHOLD = 108*4;
@@ -915,13 +915,14 @@ public:
 	/// \param to
 	/// \param from
 	/// \return
+	template<const uint32_t limit>
 	size_t swap(int wt, Element *to, Element *from) {
-		ASSERT(wt < (1u<<8u));
+		ASSERT(wt < (1u<<limit));
 
 		uint32_t nctr = 0;
 
 		#pragma unroll
-		for (uint32_t i = 0; i < 8; ++i) {
+		for (uint32_t i = 0; i < limit; ++i) {
 			if (wt & 1u) {
 				std::swap(to[nctr++], from[i]);
 			}
@@ -933,13 +934,13 @@ public:
 	}
 
 	/// NOTE: assumes T=uint64
-	/// NOTE:
+	/// NOTE: only matches weight dk on uint32
 	/// \param: e1 end index
 	/// \param: random value z
 	template<const uint32_t limb>
 	size_t avx2_sort_nn_on32(const size_t e1,
-					    	   const uint32_t z,
-							   Element *L) {
+					    	 const uint32_t z,
+							 Element *L) {
 		//ASSERT(n <= 64);
 		//ASSERT(n > 32);
 		ASSERT(limb <= ELEMENT_NR_LIMBS);
@@ -971,7 +972,54 @@ public:
 			// we need to swap the second (0 indexed) uint64_t from L + ctr with the first element from L + i.
 			// The core problem is, that we need 64bit indices and not just 32bit
 			if (wt) {
-				ctr += swap(wt, L + ctr, org_ptr);
+				ctr += swap<8>(wt, L + ctr, org_ptr);
+			}
+		}
+	
+		return ctr;
+	}
+
+	/// NOTE: assumes T=uint64
+	/// NOTE: only matches weight dk on uint64_t
+	/// \param: e1 end index
+	/// \param: random value z
+	template<const uint32_t limb>
+	size_t avx2_sort_nn_on64(const size_t e1,
+					    	 const uint64_t z,
+							 Element *L) {
+		//ASSERT(n <= 64);
+		//ASSERT(n > 32);
+		ASSERT(limb <= ELEMENT_NR_LIMBS);
+
+		/// just a shorter name, im lazy.
+		constexpr uint32_t enl = ELEMENT_NR_LIMBS;
+
+		const size_t s1 = 0;
+		const __m256i z256 = _mm256_set1_epi64x(z);
+		const __m256i mask = _mm256_set1_epi64x(dk+1);
+		const __m256i offset = _mm256_setr_epi64x(0*enl, 1*enl, 2*enl, 3*enl);
+		                                         
+		size_t ctr = 0;
+
+		/// NOTE: i need 2 ptr tracking the current position, because of the
+		/// limb shift
+		Element *ptr = (Element *)(((uint8_t *)L) + limb*8);
+		Element *org_ptr = L;
+
+		#pragma unroll 4
+		for (size_t i = s1; i < (e1+3)/4; i++, ptr += 4, org_ptr += 4) {
+			const __m256i ptr_tmp = _mm256_i64gather_epi64(ptr, offset, 8);
+			const __m256i tmp = _mm256_xor_si256(ptr_tmp, z256);
+			const __m256i tmp_pop = popcount_avx2_64(tmp);
+	
+			const __m256i gt_mask = _mm256_cmpgt_epi64(mask, tmp_pop);
+			const int wt = _mm256_movemask_pd((__m256) gt_mask);
+
+			// now `wt` contains the incises of matches. Meaning if bit 1 in `wt` is set (and bit 0 not),
+			// we need to swap the second (0 indexed) uint64_t from L + ctr with the first element from L + i.
+			// The core problem is, that we need 64bit indices and not just 32bit
+			if (wt) {
+				ctr += swap<4>(wt, L + ctr, org_ptr);
 			}
 		}
 	
@@ -984,7 +1032,7 @@ public:
 	/// \param e1
 	/// \param e2
 	template<const uint32_t level>
-	void avx2_nn_on32_internal(const size_t e1, const size_t e2) {
+	void avx2_nn_internal(const size_t e1, const size_t e2) {
 		ASSERT(e1 <= LIST_SIZE);
 		ASSERT(e2 <= LIST_SIZE);
 
@@ -995,11 +1043,25 @@ public:
 				bruteforce_avx2_64_uxv<4, 4>(e1, e2);
 			} else if constexpr (64 < n and n <= 128){
 				bruteforce_avx2_128(e1, e2);
+			} else if constexpr (128 < n and n <= 256) {
+				bruteforce_avx2_256(e1, e2);
+			} else {
+				ASSERT(false);
 			}
 		} else {
-			const uint32_t z = (uint32_t) fastrandombytes_uint64();
-			const size_t new_e2 = avx2_sort_nn_on32<r - level>(e2, z, L2);
-			const size_t new_e1 = avx2_sort_nn_on32<r - level>(e1, z, L1);
+			size_t new_e1;
+			size_t new_e2;	
+
+			if constexpr (k == 64) {
+				const uint64_t z = fastrandombytes_uint64();
+				new_e1 = avx2_sort_nn_on64<r - level>(e1, z, L1);
+				new_e2 = avx2_sort_nn_on64<r - level>(e2, z, L2);
+			} else if constexpr (k == 32) {
+				const uint32_t z = (uint32_t) fastrandombytes_uint64();
+				new_e1 = avx2_sort_nn_on32<r - level>(e1, z, L1);
+				new_e2 = avx2_sort_nn_on32<r - level>(e2, z, L2);
+			}
+
 			ASSERT(new_e1 <= LIST_SIZE);
 			ASSERT(new_e2 <= LIST_SIZE);
 			ASSERT(new_e1 <= e1);
@@ -1014,12 +1076,17 @@ public:
 					bruteforce_avx2_64_uxv<4, 4>(e1, e2);
 				} else if constexpr (64 < n and n <= 128){
 					bruteforce_avx2_128(e1, e2);
+				} else if constexpr (128 < n and n <= 256) {
+					bruteforce_avx2_256(e1, e2);
+				} else {
+					ASSERT(false);
 				}
+
 				return;
 			}
 
 			for (uint32_t i = 0; i < N; i++) {
-				avx2_nn_on32_internal<level - 1>(new_e1, new_e2);
+				avx2_nn_internal<level - 1>(new_e1, new_e2);
 
 				if (solutions_nr) {
 					std::cout << level << " " << i << " " << new_e1 << " " << new_e2 << "\n";
@@ -1029,13 +1096,11 @@ public:
 		}
 	}
 
-
-
 	template<const uint32_t level>
 	void avx2_nn(const size_t e1, const size_t e2) {
 		for (size_t i = 0; i < N; ++i) {
-			if constexpr(32 < n and n <= 128) {
-				avx2_nn_on32_internal<level>(e1, e2);
+			if constexpr(32 < n and n <= 256) {
+				avx2_nn_internal<level>(e1, e2);
 	 		} else {
 				ASSERT(false);
 			}
@@ -1048,6 +1113,7 @@ public:
 
 	/// simple test function
 	bool run() {
+		return 1;
 		Element *ptr = (Element *) malloc(10 * sizeof(T) * ELEMENT_NR_LIMBS);
 		for (int i = 0; i < 2; ++i) {
 			ptr[i][0] = i;
@@ -1086,7 +1152,6 @@ public:
 	}
 
 	uint64_t bench() {
-		return 1;
 		random_seed(time(NULL));
 		generate_random_instance();
 		uint64_t ret = 0;
@@ -1139,11 +1204,11 @@ public:
 		//ret += solutions_nr;
 		//solutions_nr = 0;
 
-		//t = clock();
-		//avx2_nn64_on32<r>(LIST_SIZE, LIST_SIZE);
-		//std::cout << "avx2_nn64_on32<2>: " << double(clock() - t)/CLOCKS_PER_SEC << "\n";
-		//ret += solutions_nr;
-		//std::cout << "sols: " << solutions_nr << "\n";
+		t = clock();
+		avx2_nn<r>(LIST_SIZE, LIST_SIZE);
+		std::cout << "avx2_nn<2>: " << double(clock() - t)/CLOCKS_PER_SEC << "\n";
+		ret += solutions_nr;
+		std::cout << "sols: " << solutions_nr << "\n";
 		return ret;
 	}
 };
