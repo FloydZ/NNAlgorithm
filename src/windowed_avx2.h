@@ -26,28 +26,27 @@
 //      n   N   r  k    dk   L     B
 //      64  25  2  32   11  20    432
 //      128 50  2  64   18  14    432 
+//      256 50  4  64   25  18    108*4
+//      256 10  8  32   12  18    108*8
 class WindowedAVX2 {
 public:
 	// TODO well make them instantiatable via constexpr constructor
 	// Additional parameters which are not defined in the base class.
 
 	constexpr static size_t n = 256;         // n
-	constexpr static size_t r = 4;           // number of blocks
-	constexpr static size_t N = 50;          // number of list spawn
+	constexpr static size_t r = 8;           // number of blocks
+	constexpr static size_t N = 10;          // number of list spawn
 	//constexpr static size_t LIST_SIZE = 112;// well, list size
-	constexpr static size_t LIST_SIZE = 16*1u<<12u;// well, list size
+	constexpr static size_t LIST_SIZE = 1u<<18u;// well, list size
 	constexpr static double d_ = 0.1;       // delta/n
 	constexpr static uint64_t k = n/r;       // n/r BlockSize
-	constexpr static uint64_t dk = 26;      // weight per block
+	constexpr static uint64_t dk = 12;      // weight per block
 	constexpr static uint64_t epsilon = 0;  // additional offset/variance we allow in each level to mach on.
 	
-	constexpr static uint64_t BRUTEFORCE_THRESHHOLD = 108*4;
+	constexpr static uint64_t BRUTEFORCE_THRESHHOLD = 8*104;
 
 	// Array indicating the window boundaries.
 	std::vector<uint64_t> buckets_windows{0, 32};
-
-	// How many solution did we already searched in the golden NN search.
-	uint64_t solution_searched = 0;
 
 	/// Base types
 	using T = uint64_t; // NOTE do not change.
@@ -598,6 +597,7 @@ public:
 	/// NOTE: uses avx2
 	/// NOTE: only in limb comparison possible. inter limb (e.g. bit 43...83) is impossible.
 	/// NOTE: assumes that list size is multiple of 4.
+	/// NOTE: this check every element on the left against 4 on the right
 	/// \param e1 end index of list 1
 	/// \param e2 end index list 2
 	void bruteforce_avx2_256(const size_t e1,
@@ -659,6 +659,171 @@ public:
 							}
 						}
 					}
+				}
+			}
+		}
+	}
+
+	/// bruteforce the two lists between the given start and end indices.
+	/// NOTE: uses avx2
+	/// NOTE: only in limb comparison possible. inter limb (e.g. bit 43...83) is impossible.
+	/// NOTE: assumes that list size is multiple of 4.
+	/// NOTE: additional to 'bruteforce_avx2_256' this functions unrolls `u` elements of
+	///		the left list.
+	/// \param e1 end index of list 1
+	/// \param e2 end index list 2
+	template<uint32_t u>
+	void bruteforce_avx2_256_ux4(const size_t e1,
+	                             const size_t e2) noexcept {
+		static_assert(u > 0, "");
+		static_assert(u <= 8, "");
+
+		ASSERT(n <= 256);
+		ASSERT(n > 128);
+		ASSERT(4 == ELEMENT_NR_LIMBS);
+		constexpr size_t s1 = 0, s2 = 0;
+		ASSERT(e1 >= s1);
+		ASSERT(e2 >= s2);
+
+		/// difference of the memory location in the right list
+		const __m128i loadr1 = {       (4ull << 32u), ( 8ul) | (12ull << 32u)};
+		const __m128i loadr2 = {1ull | (5ull << 32u), ( 9ul) | (13ull << 32u)};
+		const __m128i loadr3 = {2ull | (6ull << 32u), (10ul) | (14ull << 32u)};
+		const __m128i loadr4 = {3ull | (7ull << 32u), (11ul) | (15ull << 32u)};
+
+		alignas(32) __m256i li[u*4u];
+		alignas(32) uint32_t m1s[8] = {0}; // this clearing is important
+
+		/// allowed weight to match on
+		const __m256i weight = _mm256_setr_epi64x(0, 0, 0, 0);
+		uint32_t m1s_tmp = 0;
+		const uint32_t m1s_mask = 1u << 31;
+
+		for (size_t i = s1; i < s1 + (e1+u-1); i += u) {
+			/// Example u = 2
+			/// li[0] = L[0][0]
+			/// li[1] = L[1][0]
+			/// li[2] = L[0][1]
+			/// ...
+			#pragma unroll
+			for (uint32_t ui = 0; ui < u; ui++) {
+				li[ui + 0*u] = _mm256_set1_epi64x(L1[i + ui][0]);
+				li[ui + 1*u] = _mm256_set1_epi64x(L1[i + ui][1]);
+				li[ui + 2*u] = _mm256_set1_epi64x(L1[i + ui][2]);
+				li[ui + 3*u] = _mm256_set1_epi64x(L1[i + ui][3]);
+			}
+
+
+			/// NOTE: only possible because L2 is a continuous memory block
+			/// NOTE: reset every loop
+			T *ptr_r = (T *)L2;
+
+			for (size_t j = s2; j < s2+(e2+3)/4; ++j, ptr_r += 16) {
+				#pragma unroll
+				for (uint32_t mi = 0; mi < u; mi++) {
+					const __m256i ri = _mm256_i32gather_epi64(ptr_r, loadr1, 8);
+					const __m256i tmp1 = _mm256_xor_si256(li[0 * u + mi], ri);
+					const __m256i tmp2 = _mm256_cmpeq_epi64(tmp1, weight);
+					const uint32_t tmp = _mm256_movemask_pd((__m256d) tmp2);
+					m1s[mi] = tmp ? tmp^m1s_mask : 0;
+				}
+
+				m1s_tmp = _mm256_movemask_ps((__m256d) LOAD256((__m256i *)m1s));
+				if (m1s_tmp == 0) {
+					continue;
+				}
+
+
+				#pragma unroll
+				for (uint32_t mi = 0; mi < u; mi++) {
+					const __m256i ri = _mm256_i32gather_epi64(ptr_r, loadr2, 8);
+					const __m256i tmp1 = _mm256_xor_si256(li[1u * u + mi], ri);
+					const __m256i tmp2 = _mm256_cmpeq_epi64(tmp1, weight);
+					const uint32_t tmp = _mm256_movemask_pd((__m256d) tmp2);
+					m1s[mi] = tmp ? tmp^m1s_mask : 0;
+				}
+
+				m1s_tmp = _mm256_movemask_ps((__m256d) LOAD256((__m256i *)m1s));
+				if (m1s_tmp == 0) {
+					continue;
+				}
+
+
+				#pragma unroll
+				for (uint32_t mi = 0; mi < u; mi++) {
+					const __m256i ri = _mm256_i32gather_epi64(ptr_r, loadr3, 8);
+					const __m256i tmp1 = _mm256_xor_si256(li[2u * u + mi], ri);
+					const __m256i tmp2 = _mm256_cmpeq_epi64(tmp1, weight);
+					const uint32_t tmp = _mm256_movemask_pd((__m256d) tmp2);
+					m1s[mi] = tmp ? tmp^m1s_mask : 0;
+				}
+
+				m1s_tmp = _mm256_movemask_ps((__m256d) LOAD256((__m256i *)m1s));
+				if (m1s_tmp == 0) {
+					continue;
+				}
+
+
+				#pragma unroll
+				for (uint32_t mi = 0; mi < u; mi++) {
+					const __m256i ri = _mm256_i32gather_epi64(ptr_r, loadr4, 8);
+					const __m256i tmp1 = _mm256_xor_si256(li[3u * u + mi], ri);
+					const __m256i tmp2 = _mm256_cmpeq_epi64(tmp1, weight);
+					const uint32_t tmp = _mm256_movemask_pd((__m256d) tmp2);
+					m1s[mi] = tmp ? tmp^m1s_mask : 0;
+				}
+
+				m1s_tmp = _mm256_movemask_ps((__m256d) LOAD256((__m256i *)m1s));
+				if (m1s_tmp) {
+					const size_t jprime = j*4;
+					const uint32_t m1s_ctz = __builtin_ctz(m1s_tmp);
+					const uint32_t bla = __builtin_ctz(m1s[m1s_ctz]);
+					const size_t iprime = i + m1s_ctz;
+					//std::cout << L1[iprime][0] << " " << L2[jprime][0] << " " << L2[jprime+1][0] << " " << L2[jprime-1][0] << "\n";
+					found_solution(iprime, jprime + bla);
+				}
+			}
+		}
+	}
+
+	/// bruteforce the two lists between the given start and end indices.
+	/// NOTE: uses avx2
+	/// NOTE: only in limb comparison possible. inter limb (e.g. bit 43...83) is impossible.
+	/// NOTE: assumes that list size is multiple of 4.
+	/// NOTE: in comparison to `bruteforce_avx_256` this implementation used no `gather`
+	///		instruction, but rather direct (aligned) loads.
+	/// \param e1 end index of list 1
+	/// \param e2 end index list 2
+	void bruteforce_avx2_256_v2(const size_t e1,
+	                            const size_t e2) noexcept {
+
+		ASSERT(n <= 256);
+		ASSERT(n > 128);
+		ASSERT(4 == ELEMENT_NR_LIMBS);
+		constexpr size_t s1 = 0, s2 = 0;
+		ASSERT(e1 >= s1);
+		ASSERT(e2 >= s2);
+
+		/// allowed weight to match on
+		const __m256i weight = _mm256_setr_epi64x(0, 0, 0, 0);
+		__m256i *ptr_l = (__m256i *)L1;
+
+		for (size_t i = s1; i < e1; ++i, ptr_l += 1) {
+			const __m256i li1 = LOAD256(ptr_l);
+
+			/// NOTE: only possible because L2 is a continuous memory block
+			/// NOTE: reset every loop
+			__m256i *ptr_r = (__m256i *)L2;
+
+			for (size_t j = s2; j < s2+e2; ++j, ptr_r += 1) {
+				const __m256i ri = LOAD256(ptr_r);
+				const __m256i tmp1 = _mm256_xor_si256(li1, ri);
+				const __m256i tmp2 = _mm256_cmpeq_epi64(tmp1, weight);
+				const int m1 = _mm256_movemask_pd((__m256d) tmp2);
+
+				if (m1) {
+					//std::cout << L1[i][0] << " " << L2[j][0] << " " << L2[j+1][0] << " " << L2[j-1][0] << "\n";
+					found_solution(i, j);
 				}
 			}
 		}
@@ -1044,7 +1209,8 @@ public:
 			} else if constexpr (64 < n and n <= 128){
 				bruteforce_avx2_128(e1, e2);
 			} else if constexpr (128 < n and n <= 256) {
-				bruteforce_avx2_256(e1, e2);
+				//bruteforce_avx2_256(e1, e2);
+				bruteforce_avx2_256_ux4<8>(e1, e2);
 			} else {
 				ASSERT(false);
 			}
@@ -1077,7 +1243,8 @@ public:
 				} else if constexpr (64 < n and n <= 128){
 					bruteforce_avx2_128(e1, e2);
 				} else if constexpr (128 < n and n <= 256) {
-					bruteforce_avx2_256(e1, e2);
+					//bruteforce_avx2_256(e1, e2);
+					bruteforce_avx2_256_ux4<8>(e1, e2);
 				} else {
 					ASSERT(false);
 				}
@@ -1113,11 +1280,11 @@ public:
 
 	/// simple test function
 	bool run() {
-		return 1;
-		Element *ptr = (Element *) malloc(10 * sizeof(T) * ELEMENT_NR_LIMBS);
-		for (int i = 0; i < 2; ++i) {
-			ptr[i][0] = i;
-		}
+		return 0;
+		//Element *ptr = (Element *) malloc(10 * sizeof(T) * ELEMENT_NR_LIMBS);
+		//for (int i = 0; i < 2; ++i) {
+		//	ptr[i][0] = i;
+		//}
 		//const __m256i tmpa = shuffle_down_64(0b1010);
 		//const __m256i tmpb = shuffle_up_64(0b1010);
 		//__m256i tmp1, tmp2;
@@ -1127,7 +1294,7 @@ public:
 		//const __m256i gt_mask = _mm256_setr_epi32(-1, 0, -1, 0, -1, 0, 0, -1);
 		//int wt = _mm256_movemask_ps((__m256) gt_mask);
 		//swap_64(wt, ptr, ptr);
-		free(ptr);
+		//free(ptr);
 
 		random_seed(time(NULL));
 		generate_random_instance();
@@ -1136,13 +1303,19 @@ public:
 		//bruteforce_avx2_64(LIST_SIZE, LIST_SIZE);
 		//bruteforce_avx2_128(LIST_SIZE, LIST_SIZE);
 		//bruteforce_avx2_256(LIST_SIZE, LIST_SIZE);
+		//bruteforce_avx2_256_v2(LIST_SIZE, LIST_SIZE);
+		bruteforce_avx2_256_ux4<8>(LIST_SIZE, LIST_SIZE);
 		//bruteforce_avx2_64_1x1(LIST_SIZE, LIST_SIZE);
 		//bruteforce_avx2_64_uxv<4,4>(LIST_SIZE, LIST_SIZE);
 		//bruteforce_avx2_64_uxv_shuffle<4,4>(LIST_SIZE, LIST_SIZE);
 		//avx2_nn64_on32<r>(LIST_SIZE, LIST_SIZE);
-		avx2_nn<r>(LIST_SIZE, LIST_SIZE);
+		//avx2_nn<r>(LIST_SIZE, LIST_SIZE);
 		bool correct = all_solutions_correct();
-		if (solutions_nr == 0 or !correct) {
+		if (solutions_nr == 0) {
+			std::cout << "no sol\n";
+		}
+
+		if (correct == 0) {
 			std::cout << "wrong\n";
 		}
 
@@ -1167,10 +1340,34 @@ public:
 		//std::cout << "bruteforce_avx2_128: " << double(clock() - t)/CLOCKS_PER_SEC << "\n";
 		//ret += solutions_nr;
 		//solutions_nr = 0;
-		
+
 		//t = clock();
 		//bruteforce_avx2_256(LIST_SIZE, LIST_SIZE);
 		//std::cout << "bruteforce_avx2_256: " << double(clock() - t)/CLOCKS_PER_SEC << "\n";
+		//ret += solutions_nr;
+		//solutions_nr = 0;
+
+		//t = clock();
+		//bruteforce_avx2_256_ux4<2>(LIST_SIZE, LIST_SIZE);
+		//std::cout << "bruteforce_avx2_256_ux4<2>: " << double(clock() - t)/CLOCKS_PER_SEC << "\n";
+		//ret += solutions_nr;
+		//solutions_nr = 0;
+
+		//t = clock();
+		//bruteforce_avx2_256_ux4<4>(LIST_SIZE, LIST_SIZE);
+		//std::cout << "bruteforce_avx2_256_ux4<4>: " << double(clock() - t)/CLOCKS_PER_SEC << "\n";
+		//ret += solutions_nr;
+		//solutions_nr = 0;
+
+		//t = clock();
+		//bruteforce_avx2_256_ux4<8>(LIST_SIZE, LIST_SIZE);
+		//std::cout << "bruteforce_avx2_256_ux4<8>: " << double(clock() - t)/CLOCKS_PER_SEC << "\n";
+		//ret += solutions_nr;
+		//solutions_nr = 0;
+
+		//t = clock();
+		//bruteforce_avx2_256_v2(LIST_SIZE, LIST_SIZE);
+		//std::cout << "bruteforce_avx2_256_v2: " << double(clock() - t)/CLOCKS_PER_SEC << "\n";
 		//ret += solutions_nr;
 		//solutions_nr = 0;
 
