@@ -33,17 +33,21 @@ public:
 	// TODO well make them instantiatable via constexpr constructor
 	// Additional parameters which are not defined in the base class.
 
-	constexpr static size_t n = 256;         // n
-	constexpr static size_t r = 8;           // number of blocks
-	constexpr static size_t N = 10;          // number of list spawn
-	//constexpr static size_t LIST_SIZE = 112;// well, list size
-	constexpr static size_t LIST_SIZE = 1u<<18u;// well, list size
+	constexpr static size_t n = 32;         // n
+	constexpr static size_t r = 2;           // number of blocks
+	constexpr static size_t N = 25;          // number of list spawn
+	constexpr static size_t LIST_SIZE = 112;// well, list size
+	//constexpr static size_t LIST_SIZE = 1u<<18u;// well, list size
 	constexpr static double d_ = 0.1;       // delta/n
 	constexpr static uint64_t k = n/r;       // n/r BlockSize
-	constexpr static uint64_t dk = 12;      // weight per block
+	constexpr static uint32_t dk = 12;      // weight per block
+	constexpr static uint32_t d = 4;       // weight diff total to lok for
 	constexpr static uint64_t epsilon = 0;  // additional offset/variance we allow in each level to mach on.
 	
 	constexpr static uint64_t BRUTEFORCE_THRESHHOLD = 8*104;
+
+	// only exact matching in the bruteforce step, if set to `true`
+	constexpr static bool EXACT = false;
 
 	// Array indicating the window boundaries.
 	std::vector<uint64_t> buckets_windows{0, 32};
@@ -63,11 +67,79 @@ public:
 	size_t solution_l = 0, solution_r = 0, solutions_nr = 0;
 	std::vector<std::pair<size_t, size_t>> solutions;
 
+	/// choose a random element e1 s.t. \wt(e1) < d, and set e2 = 0
+	/// \param e1
+	/// \param e2
+	static void generate_golden_element_simple(Element &e1, Element &e2) noexcept {
+		constexpr T mask = n % T_BITSIZE == 0 ? T(-1) : ((1ul << n % T_BITSIZE) - 1ul);
+		while (true) {
+			uint32_t wt = 0;
+			for (uint32_t i = 0; i < ELEMENT_NR_LIMBS - 1; i++) {
+				e1[i] = fastrandombytes_uint64();
+				e2[i] = 0;
+				wt += __builtin_popcount(e1[i]);
+			}
 
+			e1[ELEMENT_NR_LIMBS - 1] = fastrandombytes_uint64() & mask;
+			e2[ELEMENT_NR_LIMBS - 1] = 0;
+			wt += __builtin_popcount(e1[ELEMENT_NR_LIMBS-1]);
+
+			if (wt < d)
+				return;
+		}
+	}
+
+	/// chooses e1 completely random and e2 a weight d vector. finally e2 = e2 ^ e1
+	/// \param e1 input/output
+	/// \param e2 input/output
+	static void generate_golden_element(Element &e1, Element &e2) noexcept {
+		constexpr T mask = n % T_BITSIZE == 0 ? T(-1) : ((1ul << n % T_BITSIZE) - 1ul);
+		static_assert(n > d);
+		static_assert(64 > d);
+
+		// clear e1, e2
+		for (uint32_t i = 0; i < ELEMENT_NR_LIMBS; ++i) {
+			e1[i] = 0;
+			e2[i] = 0;
+		}
+
+		// choose e2;
+		e2[0] = (1u << d) - 1;
+		for (uint32_t i = 0; i < d; ++i) {
+			const uint32_t pos = fastrandombytes_uint64() % (n - i - 1);
+
+			const uint32_t from_limb = 0;
+			const uint32_t from_pos = i;
+			const T from_mask = 1u << from_pos;
+
+			const uint32_t to_limb = pos / T_BITSIZE;
+			const uint32_t to_pos = pos % T_BITSIZE;
+			const T to_mask = 1u << to_pos;
+
+			const T from_read = (e2[from_limb] & from_mask) >> from_pos;
+			const T to_read = (e2[to_limb] & to_mask) >> to_pos;
+			e2[to_limb] ^= (-from_read ^ e2[to_limb]) & (1ul << to_pos);
+			e2[from_limb] ^= (-to_read ^ e2[from_limb]) & (1ul << from_pos);
+		}
+
+
+		uint32_t wt = 0;
+		for (uint32_t i = 0; i < ELEMENT_NR_LIMBS - 1; i++) {
+			e1[i] = fastrandombytes_uint64();
+			e2[i] ^= e1[i];
+			wt += __builtin_popcountll(e1[i] ^ e2[i]);
+		}
+
+		e1[ELEMENT_NR_LIMBS - 1] = fastrandombytes_uint64() & mask;
+		e2[ELEMENT_NR_LIMBS - 1] ^= e1[ELEMENT_NR_LIMBS - 1];
+		wt += __builtin_popcountll(e1[ELEMENT_NR_LIMBS-1] ^ e2[ELEMENT_NR_LIMBS-1]);
+		ASSERT(wt = d);
+	}
 
 	///
 	/// \param e
 	static void generate_random_element(Element &e) noexcept {
+
 		constexpr T mask = n%T_BITSIZE == 0 ? T(-1) : ((1ul << n%T_BITSIZE) - 1ul);
 		for (uint32_t i = 0; i < ELEMENT_NR_LIMBS-1; i++) {
 			e[i] = fastrandombytes_uint64();
@@ -98,15 +170,28 @@ public:
 		// generate solution:
 		solution_l = fastrandombytes_uint64() % LIST_SIZE;
 		solution_r = fastrandombytes_uint64() % LIST_SIZE;
+		//std::cout << "sols at: " << solution_l << " " << solution_r << "\n";
 
-		Element sol;
-		generate_random_element(sol);
+		if constexpr (EXACT) {
+			Element sol;
+			generate_random_element(sol);
 
-		// inject the solution
-		for (uint32_t i = 0; i < ELEMENT_NR_LIMBS; ++i) {
-			L1[solution_l][i] = sol[i];
-			L2[solution_r][i] = sol[i];
+			// inject the solution
+			for (uint32_t i = 0; i < ELEMENT_NR_LIMBS; ++i) {
+				L1[solution_l][i] = sol[i];
+				L2[solution_r][i] = sol[i];
+			}
+		} else {
+			Element sol1, sol2;
+			generate_golden_element(sol1, sol2);
+			// inject the solution
+			for (uint32_t i = 0; i < ELEMENT_NR_LIMBS; ++i) {
+				L1[solution_l][i] = sol1[i];
+				L2[solution_r][i] = sol2[i];
+			}
 		}
+
+
 	}
 
 	///
@@ -363,9 +448,17 @@ public:
 		
 		for (uint32_t i = 0; i < solutions_nr; i++) {
 			bool equal = true;
-			for (uint32_t j = 0; j < ELEMENT_NR_LIMBS; j++) {
-				//std::cout << L1[solutions[i].first][j] << " " << L2[solutions[i].second][j] << "\n";
-				equal &= L1[solutions[i].first][j] == L2[solutions[i].second][j];
+			if constexpr (EXACT) {
+				for (uint32_t j = 0; j < ELEMENT_NR_LIMBS; j++) {
+					equal &= L1[solutions[i].first][j] == L2[solutions[i].second][j];
+				}
+			} else {
+				uint32_t wt = 0;
+				for (uint32_t j = 0; j < ELEMENT_NR_LIMBS; j++) {
+					wt += __builtin_popcountll(L1[solutions[i].first][j] ^ L2[solutions[i].second][j]);
+				}
+
+				equal = wt <= d;
 			}
 
 			if (!equal)
@@ -375,18 +468,95 @@ public:
 		return true;
 	}
 
+	/// checks whether a,b are a solution or not
+	/// NOTE: upper bound `d` is inclusive
+	inline bool compare_u32(const uint32_t a, const uint32_t b) {
+		if constexpr(EXACT) {
+			return a == b;
+		} else {
+			return uint32_t(__builtin_popcount(a ^ b)) <= d;
+		}
+	}
+
+	/// checks whether a,b are a solution or not
+	/// NOTE: upper bound `d` is inclusive
+	/// \param a
+	/// \param b
+	/// \return
+	inline bool compare_u64(const uint64_t a, const uint64_t b) {
+		if constexpr(EXACT) {
+			return a == b;
+		} else {
+			return uint32_t(__builtin_popcountll(a ^ b)) <= d;
+		}
+	}
+
+	///
+	/// NOTE: upper bound `d` is inclusive
+	/// \param in
+	/// \return
+	inline int compare_256_32(const __m256i in) {
+		if constexpr(EXACT) {
+			const static __m256i weight = _mm256_set1_epi32(0);
+			const __m256i tmp2 = _mm256_cmpeq_epi32(in, weight);
+			return _mm256_movemask_ps((__m256) tmp2);
+		} else {
+			const static __m256i weight = _mm256_set1_epi32(d+1);
+			const __m256i tmp2 = _mm256_cmpgt_epi32(weight, popcount_avx2_32(in));
+			return _mm256_movemask_ps((__m256) tmp2);
+		}
+	}
+
+	///
+	/// NOTE: upper bound `d` is inclusive
+	/// \param in
+	/// \return
+	inline int compare_256_64(const __m256i in) {
+		if constexpr(EXACT) {
+			const static __m256i weight = _mm256_set1_epi64x(0);
+			const __m256i tmp2 = _mm256_cmpeq_epi64(in, weight);
+			return _mm256_movemask_pd((__m256) tmp2);
+		} else {
+			const static __m256i weight = _mm256_set1_epi64x(d+1);
+			const __m256i tmp2 = _mm256_cmpgt_epi64(weight, popcount_avx2_64(in));
+			return _mm256_movemask_pd((__m256) tmp2);
+		}
+	}
+
+	/// bruteforce the two lists between the given start and end indices.
+	/// NOTE: without avx2
+	/// \param e1 end index of list 1
+	/// \param e2 end index list 2
+	void bruteforce_32(const size_t e1,
+	                   const size_t e2) noexcept {
+		ASSERT(n <= 32);
+		constexpr size_t s1 = 0, s2 = 0;
+		ASSERT(e1 >= s1);
+		ASSERT(e2 >= s2);
+
+		/// limb position to compare on, basically the column to compare on.
+		constexpr uint32_t limb_pos = 0;
+
+		for (size_t i = s1; i < e1; ++i) {
+			for (size_t j = s2; j < s2+e2; ++j) {
+				if (compare_u32(L1[i][limb_pos], L2[j][limb_pos])) {
+					found_solution(i, j);
+				}
+			}
+		}
+	}
+
 	/// bruteforce the two lists between the given start and end indices.
 	/// NOTE: only compares a single 32 bit column of the list. But its
 	///			still possible
 	/// NOTE: only in limb comparison possible. inter limb (e.g. bit 23...43) is impossible.
 	/// NOTE: uses avx2
 	/// NOTE: only a single 32bit element is compared.
-	/// \param s1 start index of list 1
 	/// \param e1 end index of list 1
-	/// \param s2 start index list 2
 	/// \param e2 end index list 2
 	void bruteforce_avx2_32(const size_t e1,
 	                        const size_t e2) noexcept {
+		ASSERT(n <= 32);
 		constexpr size_t s1 = 0, s2 = 0;
 		ASSERT(e1 >= s1);
 		ASSERT(e2 >= s2);
@@ -400,9 +570,6 @@ public:
 		/// difference of the memory location in the right list
 		const __m256i loadr = _mm256_setr_epi32(0, 1, 2, 3, 4, 5, 6, 7);
 
-		/// allowed weight to match on
-		const __m256i weight = _mm256_setr_epi32(0, 0, 0, 0, 0, 0, 0, 0);
-
 		/// NOTE: only possible because L2 is a continuous memory block
 		const T *ptr_r = (T *)L2;
 
@@ -413,11 +580,12 @@ public:
 			for (size_t j = s2; j < s2+(e2+7)/8; ++j) {
 				const __m256i ri = _mm256_i32gather_epi32(ptr_r + 8*j, loadr, stride);
 				const __m256i tmp1 = _mm256_xor_si256(li, ri);
-				const __m256i tmp2 = _mm256_cmpeq_epi32(tmp1, weight);
-				const int m = _mm256_movemask_ps((__m256) tmp2);
+				const int m = compare_256_32(tmp1);
 
 				if (m) {
-					found_solution(i, j+__builtin_popcount(m));
+					const size_t jprime = j*8 + __builtin_ctz(m);
+					//std::cout << L1[i][0] << " " << L2[jprime][0] << " " << L2[jprime+1][0] << " " << L2[jprime-1][0] << "\n";
+					found_solution(i, jprime);
 				}
 			}
 		}
@@ -535,11 +703,12 @@ public:
 			for (size_t j = s2; j < s2+(e2+3)/4; ++j, ptr_r += 4) {
 				const __m256i ri = _mm256_i32gather_epi64(ptr_r, loadr, stride);
 				const __m256i tmp1 = _mm256_xor_si256(li, ri);
-				const __m256i tmp2 = _mm256_cmpeq_epi64(tmp1, weight);
-				const int m = _mm256_movemask_pd((__m256d) tmp2);
+				const int m = compare_256_64(tmp1);
 
 				if (m) {
-					found_solution(i, j+__builtin_ctz(m));
+					const size_t jprime = j*4+__builtin_ctz(m);
+					//std::cout << L1[i][0] << " " << L2[jprime][0] << " " << L2[jprime+1][0] << " " << L2[jprime-1][0] << "\n";
+					found_solution(i, jprime);
 				}
 			}
 		}
@@ -1475,7 +1644,6 @@ public:
 
 	/// simple test function
 	bool run() {
-		return 1;
 		//Element *ptr = (Element *) malloc(10 * sizeof(T) * ELEMENT_NR_LIMBS);
 		//for (int i = 0; i < 2; ++i) {
 		//	ptr[i][0] = i;
@@ -1493,14 +1661,15 @@ public:
 
 		random_seed(time(NULL));
 		generate_random_instance();
-
-		//bruteforce_avx2_32(LIST_SIZE, LIST_SIZE);
+		
+		//bruteforce_32(LIST_SIZE, LIST_SIZE);
+		bruteforce_avx2_32(LIST_SIZE, LIST_SIZE);
 		//bruteforce_avx2_64(LIST_SIZE, LIST_SIZE);
 		//bruteforce_avx2_128(LIST_SIZE, LIST_SIZE);
 		//bruteforce_avx2_256(LIST_SIZE, LIST_SIZE);
 		//bruteforce_avx2_256_v2(LIST_SIZE, LIST_SIZE);
 		//bruteforce_avx2_256_ux4<8>(LIST_SIZE, LIST_SIZE);
-		bruteforce_avx2_256_32_ux8<2>(LIST_SIZE, LIST_SIZE);
+		//bruteforce_avx2_256_32_ux8<2>(LIST_SIZE, LIST_SIZE);
 		//bruteforce_avx2_64_1x1(LIST_SIZE, LIST_SIZE);
 		//bruteforce_avx2_64_uxv<4,4>(LIST_SIZE, LIST_SIZE);
 		//bruteforce_avx2_64_uxv_shuffle<4,4>(LIST_SIZE, LIST_SIZE);
@@ -1515,12 +1684,13 @@ public:
 			std::cout << "wrong\n";
 		}
 
-		ASSERT(solutions_nr == 1);
 		ASSERT(correct);
+		ASSERT(solutions_nr == 1);
 		return correct;
 	}
 
 	uint64_t bench() {
+		return 1;
 		random_seed(time(NULL));
 		generate_random_instance();
 		uint64_t ret = 0;
