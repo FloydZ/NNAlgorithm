@@ -7,50 +7,39 @@
 #include "helper.h"
 #include "windowed_avx2.h"
 
-using ::testing::EmptyTestEventListener;
 using ::testing::InitGoogleTest;
 using ::testing::Test;
-using ::testing::TestEventListeners;
-using ::testing::TestInfo;
-using ::testing::TestPartResult;
-using ::testing::UnitTest;
 
-//TEST(NearestNeighbor2, Windowed) {
-//	uint64_t pos1, pos2;
-//	const uint64_t w = 0.2*G_n;       // omega
-//	const uint64_t d = uint64_t(0.3*G_n);
-//	const uint64_t r = 2;
-//	const uint64_t N = 10000;
-//	const uint64_t size = TEST_BASE_LIST_SIZE;
-//	const bool find_all = true;
-//	const uint64_t tresh = 100;
-//
-//	NNList L1{1}, L2{1};
-//
-//	NearestNeighbor::create_test_lists(L1, L2, size, w, pos1, pos2, true, r);
-//	const NNContainer gold1 = L1[pos1];
-//	const NNContainer gold2 = L2[pos2];
-//
-//	std::cout << "Solution should be: " << pos1 << " " << pos2 << "\n";
-//	std::cout << "first: " << L1[pos1] << " w:" << L1[pos1].weight() << "\n";
-//	std::cout << "second:" << L2[pos2] << " w:" << L2[pos2].weight() << "\n";
-//	std::cout << "List Size: " << L1.size() << " " << L2.size() << "\n";
-//	std::cout << "\n\n";
-//
-//	WindowedNearestNeighbor2 nn{L1, L2, w, r, N, d, find_all, tresh};
-//	uint64_t found = nn.NN();
-//	EXPECT_EQ((found > 0) || (!nn.sols_1.empty()), true);
-//	EXPECT_EQ(nn.print_result(gold1, gold2), true);
-//
-//
-//	// normal quadratic search
-//	NearestNeighbor nnq{L1, L2, w, r, N, d};
-//	nnq.NN();
-//	EXPECT_EQ(nnq.print_result(gold1, gold2), true);
-//}
+
+union U256i {
+	__m256i v;
+	uint32_t a[8];
+	uint64_t b[4];
+};
+
+TEST(AVX2, uint32_t) {
+	constexpr static WindowedAVX2_Config config{256, 4, 50, 1u<<8, 12, 4, 0, 496};
+	WindowedAVX2<config> algo{};
+	__m256i a = _mm256_setr_epi32(0, 1, 2, 3, 4, 5, 6, 7);
+	//__m256i b = WindowedAVX2<config>::popcount_avx2_32(a);
+	__m256i b = algo.popcount_avx2_32(a);
+
+	U256i c = U256i {b};
+	EXPECT_EQ(c.a[0], 0);
+	EXPECT_EQ(c.a[1], 1);
+	EXPECT_EQ(c.a[2], 1);
+	EXPECT_EQ(c.a[3], 2);
+	EXPECT_EQ(c.a[4], 1);
+	EXPECT_EQ(c.a[5], 2);
+	EXPECT_EQ(c.a[6], 2);
+	EXPECT_EQ(c.a[7], 3);
+}
+
+
 
 TEST(NearestNeighbor2, Windowed) {
-	WindowedAVX2 algo{};
+	constexpr static WindowedAVX2_Config config{256, 4, 50, 1u<<18, 12, 4, 0, 496};
+	WindowedAVX2<config> algo{};
 	algo.run();
 	algo.bench();
 }

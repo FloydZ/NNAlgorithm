@@ -22,29 +22,123 @@
 #define ASSERT(x) assert(x)
 #endif
 
+class WindowedAVX2_Config {
+private:
+	// disable the normal constructor
+	WindowedAVX2_Config() : n(0), r(0), N(0), d(0), dk(0), LIST_SIZE(0), epsilon(0), BRUTEFORCE_THRESHOLD(0) {}
+public:
+	const uint32_t n, r, N, d, dk, LIST_SIZE, epsilon, BRUTEFORCE_THRESHOLD;
+	constexpr WindowedAVX2_Config(const uint32_t n,
+	                              const uint32_t r,
+	                              const uint32_t N,
+	                              const uint32_t ls,
+	                              const uint32_t dk,
+	                              const uint32_t d,
+	                              const uint32_t epsilon,
+	                              const uint32_t bf) :
+	   n(n), r(r), N(N), d(d), dk(dk), LIST_SIZE(ls), epsilon(epsilon), BRUTEFORCE_THRESHOLD(bf)   {};
+};
+
+///
+#define BRUTEFORCE256_32_8x8_STEP(stack, a1, a2, a3, a4, a5, a6, a7, a8, b1, b2, b3, b4, b5, b6, b7, b8)    \
+	stack[ 0] = (uint8_t)compare_256_32(a1, b1); \
+	stack[ 1] = (uint8_t)compare_256_32(a1, b2); \
+	stack[ 2] = (uint8_t)compare_256_32(a1, b3); \
+	stack[ 3] = (uint8_t)compare_256_32(a1, b4); \
+	stack[ 4] = (uint8_t)compare_256_32(a1, b5); \
+	stack[ 5] = (uint8_t)compare_256_32(a1, b6); \
+	stack[ 6] = (uint8_t)compare_256_32(a1, b7); \
+	stack[ 7] = (uint8_t)compare_256_32(a1, b8); \
+	stack[ 8] = (uint8_t)compare_256_32(a2, b1); \
+	stack[ 9] = (uint8_t)compare_256_32(a2, b2); \
+	stack[10] = (uint8_t)compare_256_32(a2, b3); \
+	stack[11] = (uint8_t)compare_256_32(a2, b4); \
+	stack[12] = (uint8_t)compare_256_32(a2, b5); \
+	stack[13] = (uint8_t)compare_256_32(a2, b6); \
+	stack[14] = (uint8_t)compare_256_32(a2, b7); \
+	stack[15] = (uint8_t)compare_256_32(a2, b8); \
+	stack[16] = (uint8_t)compare_256_32(a3, b1); \
+	stack[17] = (uint8_t)compare_256_32(a3, b2); \
+	stack[18] = (uint8_t)compare_256_32(a3, b3); \
+	stack[19] = (uint8_t)compare_256_32(a3, b4); \
+	stack[20] = (uint8_t)compare_256_32(a3, b5); \
+	stack[21] = (uint8_t)compare_256_32(a3, b6); \
+	stack[22] = (uint8_t)compare_256_32(a3, b7); \
+	stack[23] = (uint8_t)compare_256_32(a3, b8); \
+	stack[24] = (uint8_t)compare_256_32(a4, b1); \
+	stack[25] = (uint8_t)compare_256_32(a4, b2); \
+	stack[26] = (uint8_t)compare_256_32(a4, b3); \
+	stack[27] = (uint8_t)compare_256_32(a4, b4); \
+	stack[28] = (uint8_t)compare_256_32(a4, b5); \
+	stack[29] = (uint8_t)compare_256_32(a4, b6); \
+	stack[30] = (uint8_t)compare_256_32(a4, b7); \
+	stack[31] = (uint8_t)compare_256_32(a4, b8); \
+	stack[32] = (uint8_t)compare_256_32(a5, b1); \
+	stack[33] = (uint8_t)compare_256_32(a5, b2); \
+	stack[34] = (uint8_t)compare_256_32(a5, b3); \
+	stack[35] = (uint8_t)compare_256_32(a5, b4); \
+	stack[36] = (uint8_t)compare_256_32(a5, b5); \
+	stack[37] = (uint8_t)compare_256_32(a5, b6); \
+	stack[38] = (uint8_t)compare_256_32(a5, b7); \
+	stack[39] = (uint8_t)compare_256_32(a6, b8); \
+	stack[40] = (uint8_t)compare_256_32(a6, b1); \
+	stack[41] = (uint8_t)compare_256_32(a6, b2); \
+	stack[42] = (uint8_t)compare_256_32(a6, b3); \
+	stack[43] = (uint8_t)compare_256_32(a6, b4); \
+	stack[44] = (uint8_t)compare_256_32(a6, b5); \
+	stack[45] = (uint8_t)compare_256_32(a6, b6); \
+	stack[46] = (uint8_t)compare_256_32(a6, b7); \
+	stack[47] = (uint8_t)compare_256_32(a6, b8); \
+	stack[48] = (uint8_t)compare_256_32(a7, b1); \
+	stack[49] = (uint8_t)compare_256_32(a7, b2); \
+	stack[50] = (uint8_t)compare_256_32(a7, b3); \
+	stack[51] = (uint8_t)compare_256_32(a7, b4); \
+	stack[52] = (uint8_t)compare_256_32(a7, b5); \
+	stack[53] = (uint8_t)compare_256_32(a7, b6); \
+	stack[54] = (uint8_t)compare_256_32(a7, b7); \
+	stack[55] = (uint8_t)compare_256_32(a8, b8); \
+	stack[56] = (uint8_t)compare_256_32(a8, b1); \
+	stack[57] = (uint8_t)compare_256_32(a8, b2); \
+	stack[58] = (uint8_t)compare_256_32(a8, b3); \
+	stack[59] = (uint8_t)compare_256_32(a8, b4); \
+	stack[60] = (uint8_t)compare_256_32(a8, b5); \
+	stack[61] = (uint8_t)compare_256_32(a8, b6); \
+	stack[62] = (uint8_t)compare_256_32(a8, b7); \
+	stack[63] = (uint8_t)compare_256_32(a8, b4)
+
+
+
+
 // good values
 //      n   N   r  k    dk   L     B
 //      64  25  2  32   11  20    432
 //      128 50  2  64   18  14    432 
 //      256 50  4  64   25  18    108*4
 //      256 10  8  32   12  18    108*8
+template<const WindowedAVX2_Config &config>
 class WindowedAVX2 {
 public:
-	// TODO well make them instantiatable via constexpr constructor
-	// Additional parameters which are not defined in the base class.
+	//constexpr static size_t n = 256;         // n
+	//constexpr static size_t r = 2;           // number of blocks
+	//constexpr static size_t N = 25;          // number of list spawn
+	//constexpr static size_t LIST_SIZE = 112;// well, list size
+	////constexpr static size_t LIST_SIZE = 1u<<18u;// well, list size
+	//constexpr static double d_ = 0.1;        // delta/n
+	//constexpr static uint64_t k = n/r;       // n/r BlockSize
+	//constexpr static uint32_t dk = 12;       // weight per block
+	//constexpr static uint32_t d = 4;         // weight diff total to lok for
+	//constexpr static uint64_t epsilon = 0;   // additional offset/variance we allow in each level to mach on.
+	//constexpr static uint64_t BRUTEFORCE_THRESHHOLD = 8*104;
 
-	constexpr static size_t n = 32;         // n
-	constexpr static size_t r = 2;           // number of blocks
-	constexpr static size_t N = 25;          // number of list spawn
-	constexpr static size_t LIST_SIZE = 112;// well, list size
-	//constexpr static size_t LIST_SIZE = 1u<<18u;// well, list size
-	constexpr static double d_ = 0.1;       // delta/n
-	constexpr static uint64_t k = n/r;       // n/r BlockSize
-	constexpr static uint32_t dk = 12;      // weight per block
-	constexpr static uint32_t d = 4;       // weight diff total to lok for
-	constexpr static uint64_t epsilon = 0;  // additional offset/variance we allow in each level to mach on.
-	
-	constexpr static uint64_t BRUTEFORCE_THRESHHOLD = 8*104;
+	constexpr static size_t n = config.n;
+	constexpr static size_t r = config.r;
+	constexpr static size_t N = config.N;
+	constexpr static size_t LIST_SIZE = config.LIST_SIZE;
+	constexpr static uint64_t k = n/r;
+	constexpr static uint32_t dk = config.dk;
+	constexpr static uint32_t d = config.d;
+	constexpr static uint64_t epsilon = config.epsilon;
+	constexpr static uint64_t BRUTEFORCE_THRESHHOLD = config.BRUTEFORCE_THRESHOLD;
 
 	// only exact matching in the bruteforce step, if set to `true`
 	constexpr static bool EXACT = false;
@@ -57,10 +151,8 @@ public:
 	constexpr static size_t T_BITSIZE = sizeof(T) * 8;
 	constexpr static size_t ELEMENT_NR_LIMBS = (n + T_BITSIZE - 1) / T_BITSIZE;
 	using Element = T[ELEMENT_NR_LIMBS];
-	using List    = std::array<Element, LIST_SIZE>;
 
 	// instance
-	// alignas(64) List L1, L2;
 	alignas(64) Element *L1, *L2;
 
 	// solution
@@ -168,8 +260,8 @@ public:
 		generate_random_lists(L2);
 
 		// generate solution:
-		solution_l = fastrandombytes_uint64() % LIST_SIZE;
-		solution_r = fastrandombytes_uint64() % LIST_SIZE;
+		solution_l = 0;//fastrandombytes_uint64() % LIST_SIZE;
+		solution_r = 0;//fastrandombytes_uint64() % LIST_SIZE;
 		//std::cout << "sols at: " << solution_l << " " << solution_r << "\n";
 
 		if constexpr (EXACT) {
@@ -371,19 +463,29 @@ public:
 		higher = _mm256_cvtepu8_epi64(bytevec2);
 	}
 
+	//constexpr static uint8_t popcount_table[256] = {0 ,1 ,1 ,2 ,1 ,2 ,2 ,3 ,1 ,2 ,2 ,3 ,2 ,3 ,3 ,4 ,1 ,2 ,2 ,3 ,2 ,3 ,3 ,4 ,2 ,3 ,3 ,4 ,3 ,4 ,4 ,5 ,1 ,2 ,2 ,3 ,2 ,3 ,3 ,4 ,2 ,3 ,3 ,4 ,3 ,4 ,4 ,5 ,2 ,3 ,3 ,4 ,3 ,4 ,4 ,5 ,3 ,4 ,4 ,5 ,4 ,5 ,5 ,6 ,1 ,2 ,2 ,3 ,2 ,3 ,3 ,4 ,2 ,3 ,3 ,4 ,3 ,4 ,4 ,5 ,2 ,3 ,3 ,4 ,3 ,4 ,4 ,5 ,3 ,4 ,4 ,5 ,4 ,5 ,5 ,6 ,2 ,3 ,3 ,4 ,3 ,4 ,4 ,5 ,3 ,4 ,4 ,5 ,4 ,5 ,5 ,6 ,3 ,4 ,4 ,5 ,4 ,5 ,5 ,6 ,4 ,5 ,5 ,6 ,5 ,6 ,6 ,7 ,1 ,2 ,2 ,3 ,2 ,3 ,3 ,4 ,2 ,3 ,3 ,4 ,3 ,4 ,4 ,5 ,2 ,3 ,3 ,4 ,3 ,4 ,4 ,5 ,3 ,4 ,4 ,5 ,4 ,5 ,5 ,6 ,2 ,3 ,3 ,4 ,3 ,4 ,4 ,5 ,3 ,4 ,4 ,5 ,4 ,5 ,5 ,6 ,3 ,4 ,4 ,5 ,4 ,5 ,5 ,6 ,4 ,5 ,5 ,6 ,5 ,6 ,6 ,7 ,2 ,3 ,3 ,4 ,3 ,4 ,4 ,5 ,3 ,4 ,4 ,5 ,4 ,5 ,5 ,6 ,3 ,4 ,4 ,5 ,4 ,5 ,5 ,6 ,4 ,5 ,5 ,6 ,5 ,6 ,6 ,7 ,3 ,4 ,4 ,5 ,4 ,5 ,5 ,6 ,4 ,5 ,5 ,6 ,5 ,6 ,6 ,7 ,4 ,5 ,5 ,6 ,5 ,6 ,6 ,7 ,5 ,6 ,6 ,7 ,6 ,7 ,7 };
+	//inline static __m256i popcount_avx2_32_v2(const __m256i vec) noexcept {
+	//	const static __m256i low_mask = _mm256_set1_epi16(0xff);
+	//	const __m256i lo  = _mm256_and_si256(vec, low_mask);
+	//	const __m256i hi  = _mm256_and_si256(_mm256_srli_epi16(vec, 8), low_mask);
+	//	const __m256i pop1 = _mm256_i32gather_epi32((uint32_t *)popcount_table, lo, 1);
+	//	const __m256i pop2 = _mm256_i32gather_epi32((uint32_t *)popcount_table, hi, 1);
+	//	return _mm256_and_si256(_mm256_add_epi8(pop1, pop2), low_mask);
+	//}
+
+	const __m256i lookup = _mm256_setr_epi8(
+			/* 0 */ 0, /* 1 */ 1, /* 2 */ 1, /* 3 */ 2,
+			/* 4 */ 1, /* 5 */ 2, /* 6 */ 2, /* 7 */ 3,
+			/* 8 */ 1, /* 9 */ 2, /* a */ 2, /* b */ 3,
+			/* c */ 2, /* d */ 3, /* e */ 3, /* f */ 4,
+			/* 0 */ 0, /* 1 */ 1, /* 2 */ 1, /* 3 */ 2,
+			/* 4 */ 1, /* 5 */ 2, /* 6 */ 2, /* 7 */ 3,
+			/* 8 */ 1, /* 9 */ 2, /* a */ 2, /* b */ 3,
+			/* c */ 2, /* d */ 3, /* e */ 3, /* f */ 4
+	);
 	/// special popcount, which popcounts on 8 * 32u bit limbs in parallel
-	static __m256i popcount_avx2_32(const __m256i vec) noexcept {
-		const __m256i lookup = _mm256_setr_epi8(
-		    /* 0 */ 0, /* 1 */ 1, /* 2 */ 1, /* 3 */ 2,
-		    /* 4 */ 1, /* 5 */ 2, /* 6 */ 2, /* 7 */ 3,
-		    /* 8 */ 1, /* 9 */ 2, /* a */ 2, /* b */ 3,
-		    /* c */ 2, /* d */ 3, /* e */ 3, /* f */ 4,
-		    /* 0 */ 0, /* 1 */ 1, /* 2 */ 1, /* 3 */ 2,
-		    /* 4 */ 1, /* 5 */ 2, /* 6 */ 2, /* 7 */ 3,
-		    /* 8 */ 1, /* 9 */ 2, /* a */ 2, /* b */ 3,
-		    /* c */ 2, /* d */ 3, /* e */ 3, /* f */ 4
-		);
-	
+	inline __m256i popcount_avx2_32(const __m256i vec) noexcept {
+
 		const __m256i low_mask = _mm256_set1_epi8(0x0f);
 	    const __m256i lo  = _mm256_and_si256(vec, low_mask);
 	    const __m256i hi  = _mm256_and_si256(_mm256_srli_epi16(vec, 4), low_mask);
@@ -396,14 +498,14 @@ public:
 		// not the best
 		const __m256i mask = _mm256_set1_epi32(0xff);
 		__m256i ret = _mm256_and_si256(local, mask);
-		ret = _mm256_add_epi8(ret, _mm256_and_si256(_mm256_srli_epi32(local,  8), mask));
+		ret = _mm256_add_epi8(ret, _mm256_and_si256(_mm256_srli_epi16(local,  8), mask));
 		ret = _mm256_add_epi8(ret, _mm256_and_si256(_mm256_srli_epi32(local, 16), mask));
-		ret = _mm256_add_epi8(ret, _mm256_and_si256(_mm256_srli_epi32(local, 24), mask));
+		//ret = _mm256_add_epi8(ret, _mm256_and_si256(_mm256_srli_epi32(local, 24), mask));
 		return ret;
 	}
 	
 	/// special popcount which popcounts on 4 * 64 bit limbs in parallel
-	static __m256i popcount_avx2_64(const __m256i vec) noexcept {
+	inline static __m256i popcount_avx2_64(const __m256i vec) noexcept {
 		const __m256i lookup = _mm256_setr_epi8(
 		    /* 0 */ 0, /* 1 */ 1, /* 2 */ 1, /* 3 */ 2,
 		    /* 4 */ 1, /* 5 */ 2, /* 6 */ 2, /* 7 */ 3,
@@ -437,6 +539,8 @@ public:
 	// adds `li` and `lr` to the solutions list.
 	void found_solution(const size_t li,
 	                    const size_t lr) {
+		ASSERT(li < LIST_SIZE);
+		ASSERT(lr < LIST_SIZE);
 		solutions.resize(solutions_nr + 1);
 		solutions[solutions_nr++] = std::pair<size_t, size_t>{li, lr};
 	}
@@ -491,18 +595,38 @@ public:
 		}
 	}
 
+	inline bool compare_u64_ptr(const uint64_t *a, const uint64_t *b) {
+		if constexpr(EXACT) {
+			for (uint32_t i = 0; i < ELEMENT_NR_LIMBS; i++) {
+				if (a[i] != b[i])
+					return false;
+			}
+
+			return true;
+		} else {
+			uint32_t wt = 0;
+			for (uint32_t i = 0; i < ELEMENT_NR_LIMBS; i++) {
+				wt += __builtin_popcountll(a[i] ^ b[i]);
+			}
+
+			return wt <= d;
+		}
+	}
+
 	///
 	/// NOTE: upper bound `d` is inclusive
 	/// \param in
 	/// \return
-	inline int compare_256_32(const __m256i in) {
+	inline int compare_256_32(const __m256i in1, const __m256i in2) {
 		if constexpr(EXACT) {
-			const static __m256i weight = _mm256_set1_epi32(0);
-			const __m256i tmp2 = _mm256_cmpeq_epi32(in, weight);
+			const __m256i tmp2 = _mm256_cmpeq_epi32(in1, in2);
 			return _mm256_movemask_ps((__m256) tmp2);
 		} else {
 			const static __m256i weight = _mm256_set1_epi32(d+1);
-			const __m256i tmp2 = _mm256_cmpgt_epi32(weight, popcount_avx2_32(in));
+
+			const __m256i tmp1 = _mm256_xor_si256(in1, in2);
+			const __m256i pop = popcount_avx2_32(tmp1);
+			const __m256i tmp2 = _mm256_cmpgt_epi32(weight, pop);
 			return _mm256_movemask_ps((__m256) tmp2);
 		}
 	}
@@ -511,14 +635,16 @@ public:
 	/// NOTE: upper bound `d` is inclusive
 	/// \param in
 	/// \return
-	inline int compare_256_64(const __m256i in) {
+	inline int compare_256_64(const __m256i in1, const __m256i in2) {
 		if constexpr(EXACT) {
-			const static __m256i weight = _mm256_set1_epi64x(0);
-			const __m256i tmp2 = _mm256_cmpeq_epi64(in, weight);
+			const __m256i tmp2 = _mm256_cmpeq_epi64(in1, in2);
 			return _mm256_movemask_pd((__m256) tmp2);
 		} else {
 			const static __m256i weight = _mm256_set1_epi64x(d+1);
-			const __m256i tmp2 = _mm256_cmpgt_epi64(weight, popcount_avx2_64(in));
+
+			const __m256i tmp1 = _mm256_xor_si256(in1, in2);
+			const __m256i pop = popcount_avx2_64(tmp1);
+			const __m256i tmp2 = _mm256_cmpgt_epi64(weight, pop);
 			return _mm256_movemask_pd((__m256) tmp2);
 		}
 	}
@@ -579,8 +705,7 @@ public:
 
 			for (size_t j = s2; j < s2+(e2+7)/8; ++j) {
 				const __m256i ri = _mm256_i32gather_epi32(ptr_r + 8*j, loadr, stride);
-				const __m256i tmp1 = _mm256_xor_si256(li, ri);
-				const int m = compare_256_32(tmp1);
+				const int m = compare_256_32(li, ri);
 
 				if (m) {
 					const size_t jprime = j*8 + __builtin_ctz(m);
@@ -702,13 +827,200 @@ public:
 
 			for (size_t j = s2; j < s2+(e2+3)/4; ++j, ptr_r += 4) {
 				const __m256i ri = _mm256_i32gather_epi64(ptr_r, loadr, stride);
-				const __m256i tmp1 = _mm256_xor_si256(li, ri);
-				const int m = compare_256_64(tmp1);
+				const int m = compare_256_64(li, ri);
 
 				if (m) {
 					const size_t jprime = j*4+__builtin_ctz(m);
 					//std::cout << L1[i][0] << " " << L2[jprime][0] << " " << L2[jprime+1][0] << " " << L2[jprime-1][0] << "\n";
 					found_solution(i, jprime);
+				}
+			}
+		}
+	}
+
+	/// NOTE: in comparison to the other version `bruteforce_avx2_64` this implementation
+	///			assumes that the elements to compare are fully compared on all n variables
+	///  		e.g. ELEMENT_NR_LIMBS == 1
+	/// \param e1 end index of list 1
+	/// \param e2 end index list 2
+	void bruteforce_avx2_64_1x1(const size_t e1,
+	                            const size_t e2) noexcept {
+		ASSERT(ELEMENT_NR_LIMBS == 1);
+		ASSERT(n <= 64);
+		ASSERT(n >= 33);
+
+		constexpr size_t s1 = 0, s2 = 0;
+		ASSERT(e1 >= s1);
+		ASSERT(e2 >= s2);
+
+		/// allowed weight to match on
+		const __m256i weight = _mm256_setr_epi64x(0, 0, 0, 0);
+
+		for (size_t i = s1; i < e1; ++i) {
+			const __m256i li = _mm256_set1_epi64x(L1[i][0]);
+
+			/// NOTE: only possible because L2 is a continuous memory block
+			__m256i *ptr_r = (__m256i *)L2;
+
+			for (size_t j = s2; j < s2+(e2+3)/4; ++j, ptr_r += 1) {
+				const __m256i ri = LOAD256(ptr_r);
+				const int m = compare_256_64(li, ri);
+
+				if (m) {
+					const size_t jprime = j*4 + __builtin_ctz(m);
+					// std::cout << L1[i][0] << " " << L2[jprime][0] << " " << L2[jprime+1][0] << " " << L2[jprime-1][0] << "\n";
+					found_solution(i, jprime);
+				}
+			}
+		}
+	}
+
+	/// NOTE: in comparison to the other version `bruteforce_avx2_64` this implementation
+	///			assumes that the elements to compare are fully compared on all n variables
+	///  		e.g. ELEMENT_NR_LIMBS == 1
+	/// NOTE: compared to `bruteforce_avx2_64_1x1` this unrolls `u` elementes in the left
+	///			list and `v` elements on the right.
+	/// \param e1 end index of list 1
+	/// \param e2 end index list 2
+	template<const uint32_t u, const uint32_t v>
+	void bruteforce_avx2_64_uxv(const size_t e1,
+	                            const size_t e2) noexcept {
+		ASSERT(ELEMENT_NR_LIMBS == 1);
+		ASSERT(n <= 64);
+		ASSERT(n >= 33);
+
+		constexpr size_t s1 = 0, s2 = 0;
+		ASSERT(e1 >= s1);
+		ASSERT(e2 >= s2);
+
+		__m256i lii[u], rii[v];
+
+		/// allowed weight to match on
+		const __m256i weight = _mm256_setr_epi64x(0, 0, 0, 0);
+
+		for (size_t i = s1; i < e1; i += u) {
+
+			#pragma unroll
+			for (uint32_t j = 0; j < u; ++j) {
+				lii[j] = _mm256_set1_epi64x(L1[i + j][0]);
+			}
+
+			/// NOTE: only possible because L2 is a continuous memory block
+			__m256i *ptr_r = (__m256i *)L2;
+
+			for (size_t j = s2; j < s2+(e2+3)/4; j += v, ptr_r += v) {
+
+				#pragma unroll
+				for (uint32_t s = 0; s < v; ++s) {
+					rii[s] = LOAD256(ptr_r + s);
+				}
+
+				#pragma unroll
+				for (uint32_t a1 = 0; a1 < u; ++a1) {
+					const __m256i tmp1 = lii[a1];
+					#pragma unroll
+					for (uint32_t a2 = 0; a2 < v; ++a2) {
+						const __m256i tmp2 = rii[a2];
+						const int m = compare_256_64(tmp1, tmp2);
+
+						if (m) {
+							const size_t jprime = j*4 + a2*4 + __builtin_ctz(m);
+							const size_t iprime = i + a1;
+							//std::cout << L1[iprime][0] << " " << L2[jprime][0] << " " << L2[jprime+1][0] << " " << L2[jprime-1][0] << "\n";
+							found_solution(iprime, jprime);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	/// NOTE: in comparison to the other version `bruteforce_avx2_64` this implementation
+	///			assumes that the elements to compare are fully compared on all n variables
+	///  		e.g. ELEMENT_NR_LIMBS == 1
+	/// NOTE: compared to `bruteforce_avx2_64_1x1` this unrolls `u` elementes in the left
+	///			list and `v` elements on the right.
+	/// NOTE: compared to `bruteforce_avx2_64_uxv` this function is not only comparing 1
+	///			element of the left list with u elements from the right. Side
+	///			Internally the loop is unrolled to compare u*4 elements to v on the right
+	/// NOTE: assumes the input list to of length multiple of 16
+	/// \param e1 end index of list 1
+	/// \param e2 end index list 2
+	template<const uint32_t u, const uint32_t v>
+	void bruteforce_avx2_64_uxv_shuffle(const size_t e1,
+	                                    const size_t e2) noexcept {
+		ASSERT(ELEMENT_NR_LIMBS == 1);
+		ASSERT(n <= 64);
+		ASSERT(n >= 33);
+
+		constexpr size_t s1 = 0, s2 = 0;
+		ASSERT(e1 >= s1);
+		ASSERT(e2 >= s2);
+
+		__m256i lii[u], rii[v];
+		__m256i *ptr_l = (__m256i *)L1;
+
+		/// allowed weight to match on
+		const __m256i weight = _mm256_setr_epi64x(0, 0, 0, 0);
+
+		for (size_t i = s1; i < s1 + (e1+3)/4; i += u, ptr_l += u) {
+
+			#pragma unroll
+			for (uint32_t j = 0; j < u; ++j) {
+				lii[j] = LOAD256(ptr_l + j);
+			}
+
+			/// NOTE: only possible because L2 is a continuous memory block
+			__m256i *ptr_r = (__m256i *)L2;
+
+			for (size_t j = s2; j < s2+(e2+3)/4; j += v, ptr_r += v) {
+
+				#pragma unroll
+				for (uint32_t s = 0; s < v; ++s) {
+					rii[s] = LOAD256(ptr_r + s);
+				}
+
+				#pragma unroll
+				for (uint32_t a1 = 0; a1 < u; ++a1) {
+					const __m256i tmp1 = lii[a1];
+					#pragma unroll
+					for (uint32_t a2 = 0; a2 < v; ++a2) {
+						__m256i tmp2 = rii[a2];
+						int m = compare_256_64(tmp1, tmp2);
+						if (m) {
+							const size_t jprime = j*4 + a2*4 + __builtin_ctz(m);
+							const size_t iprime = i*4 + a1*4 + __builtin_ctz(m);
+							//std::cout << L1[iprime][0] << " " << L2[jprime][0] << " " << L2[jprime+1][0] << " " << L2[jprime-1][0] << "\n";
+							found_solution(iprime, jprime);
+						}
+
+						tmp2 = _mm256_permute4x64_epi64(tmp2, 0b10010011);
+						m = compare_256_64(tmp1, tmp2);
+						if (m) {
+							const size_t jprime = j*4 + a2*4 + __builtin_ctz(m) + 3;
+							const size_t iprime = i*4 + a1*4 + __builtin_ctz(m);
+							//std::cout << L1[iprime][0] << " " << L2[jprime][0] << " " << L2[jprime+1][0] << " " << L2[jprime-1][0] << "\n";
+							found_solution(iprime, jprime);
+						}
+
+						tmp2 = _mm256_permute4x64_epi64(tmp2, 0b10010011);
+						m = compare_256_64(tmp1, tmp2);
+						if (m) {
+							const size_t jprime = j*4 + a2*4 + __builtin_ctz(m) + 2;
+							const size_t iprime = i*4 + a1*4+ __builtin_ctz(m);
+							//std::cout << L1[iprime][0] << " " << L2[jprime][0] << " " << L2[jprime+1][0] << " " << L2[jprime-1][0] << "\n";
+							found_solution(iprime, jprime);
+						}
+
+						tmp2 = _mm256_permute4x64_epi64(tmp2, 0b10010011);
+						m = compare_256_64(tmp1, tmp2);
+						if (m) {
+							const size_t jprime = j*4 + a2*4 + __builtin_ctz(m) + 1;
+							const size_t iprime = i*4 + a1*4 + __builtin_ctz(m);
+							//std::cout << L1[iprime][0] << " " << L2[jprime][0] << " " << L2[jprime+1][0] << " " << L2[jprime-1][0] << "\n";
+							found_solution(iprime, jprime);
+						}
+					}
 				}
 			}
 		}
@@ -746,15 +1058,11 @@ public:
 
 			for (size_t j = s2; j < s2+(e2+3)/4; ++j, ptr_r += 8) {
 				const __m256i ri = _mm256_i32gather_epi64(ptr_r, loadr1, 8);
-				const __m256i tmp1 = _mm256_xor_si256(li1, ri);
-				const __m256i tmp2 = _mm256_cmpeq_epi64(tmp1, weight);
-				const int m1 = _mm256_movemask_pd((__m256d) tmp2);
+				const int m1 = compare_256_64(li1, ri);
 
 				if (m1) {
 					const __m256i ri = _mm256_i32gather_epi64(ptr_r, loadr2, 8);
-					const __m256i tmp1 = _mm256_xor_si256(li2, ri);
-					const __m256i tmp2 = _mm256_cmpeq_epi64(tmp1, weight);
-					const int m1 = _mm256_movemask_pd((__m256d) tmp2);
+					const int m1 = compare_256_64(li2, ri);
 
 					if (m1) {
 						const size_t jprime = j*4;
@@ -805,27 +1113,19 @@ public:
 
 			for (size_t j = s2; j < s2+(e2+3)/4; ++j, ptr_r += 16) {
 				const __m256i ri = _mm256_i32gather_epi64(ptr_r, loadr1, 8);
-				const __m256i tmp1 = _mm256_xor_si256(li1, ri);
-				const __m256i tmp2 = _mm256_cmpeq_epi64(tmp1, weight);
-				const int m1 = _mm256_movemask_pd((__m256d) tmp2);
+				const int m1 = compare_256_64(li1, ri);
 
 				if (m1) {
 					const __m256i ri = _mm256_i32gather_epi64(ptr_r, loadr2, 8);
-					const __m256i tmp1 = _mm256_xor_si256(li2, ri);
-					const __m256i tmp2 = _mm256_cmpeq_epi64(tmp1, weight);
-					const int m1 = _mm256_movemask_pd((__m256d) tmp2);
+					const int m1 = compare_256_64(li2, ri);
 
 					if (m1) {
 						const __m256i ri = _mm256_i32gather_epi64(ptr_r, loadr3, 8);
-						const __m256i tmp1 = _mm256_xor_si256(li3, ri);
-						const __m256i tmp2 = _mm256_cmpeq_epi64(tmp1, weight);
-						const int m1 = _mm256_movemask_pd((__m256d) tmp2);
+						const int m1 = compare_256_64(li3, ri);
 
 						if (m1) {
 							const __m256i ri = _mm256_i32gather_epi64(ptr_r, loadr4, 8);
-							const __m256i tmp1 = _mm256_xor_si256(li4, ri);
-							const __m256i tmp2 = _mm256_cmpeq_epi64(tmp1, weight);
-							const int m1 = _mm256_movemask_pd((__m256d) tmp2);
+							const int m1 = compare_256_64(li4, ri);
 							if (m1) {
 								const size_t jprime = j*4;
 								//std::cout << L1[i][0] << " " << L2[jprime][0] << " " << L2[jprime+1][0] << " " << L2[jprime-1][0] << "\n";
@@ -869,11 +1169,10 @@ public:
 		alignas(32) uint32_t m1s[8] = {0}; // this clearing is important
 
 		/// allowed weight to match on
-		const __m256i weight = _mm256_setr_epi64x(0, 0, 0, 0);
 		uint32_t m1s_tmp = 0;
 		const uint32_t m1s_mask = 1u << 31;
 
-		for (size_t i = s1; i < s1 + (e1+u-1); i += u) {
+		for (size_t i = s1; i < s1 + e1; i += u) {
 			/// Example u = 2
 			/// li[0] = L[0][0]
 			/// li[1] = L[1][0]
@@ -896,9 +1195,7 @@ public:
 				#pragma unroll
 				for (uint32_t mi = 0; mi < u; mi++) {
 					const __m256i ri = _mm256_i32gather_epi64(ptr_r, loadr1, 8);
-					const __m256i tmp1 = _mm256_xor_si256(li[0 * u + mi], ri);
-					const __m256i tmp2 = _mm256_cmpeq_epi64(tmp1, weight);
-					const uint32_t tmp = _mm256_movemask_pd((__m256d) tmp2);
+					const uint32_t tmp  = compare_256_64(li[0 * u + mi], ri);
 					m1s[mi] = tmp ? tmp^m1s_mask : 0;
 				}
 
@@ -911,9 +1208,7 @@ public:
 				#pragma unroll
 				for (uint32_t mi = 0; mi < u; mi++) {
 					const __m256i ri = _mm256_i32gather_epi64(ptr_r, loadr2, 8);
-					const __m256i tmp1 = _mm256_xor_si256(li[1u * u + mi], ri);
-					const __m256i tmp2 = _mm256_cmpeq_epi64(tmp1, weight);
-					const uint32_t tmp = _mm256_movemask_pd((__m256d) tmp2);
+					const uint32_t tmp  = compare_256_64(li[1 * u + mi], ri);
 					m1s[mi] = tmp ? tmp^m1s_mask : 0;
 				}
 
@@ -926,9 +1221,7 @@ public:
 				#pragma unroll
 				for (uint32_t mi = 0; mi < u; mi++) {
 					const __m256i ri = _mm256_i32gather_epi64(ptr_r, loadr3, 8);
-					const __m256i tmp1 = _mm256_xor_si256(li[2u * u + mi], ri);
-					const __m256i tmp2 = _mm256_cmpeq_epi64(tmp1, weight);
-					const uint32_t tmp = _mm256_movemask_pd((__m256d) tmp2);
+					const uint32_t tmp  = compare_256_64(li[2 * u + mi], ri);
 					m1s[mi] = tmp ? tmp^m1s_mask : 0;
 				}
 
@@ -941,9 +1234,7 @@ public:
 				#pragma unroll
 				for (uint32_t mi = 0; mi < u; mi++) {
 					const __m256i ri = _mm256_i32gather_epi64(ptr_r, loadr4, 8);
-					const __m256i tmp1 = _mm256_xor_si256(li[3u * u + mi], ri);
-					const __m256i tmp2 = _mm256_cmpeq_epi64(tmp1, weight);
-					const uint32_t tmp = _mm256_movemask_pd((__m256d) tmp2);
+					const uint32_t tmp  = compare_256_64(li[3 * u + mi], ri);
 					m1s[mi] = tmp ? tmp^m1s_mask : 0;
 				}
 
@@ -1019,9 +1310,7 @@ public:
 				#pragma unroll
 				for (uint32_t mi = 0; mi < u; mi++) {
 					const __m256i ri = _mm256_i32gather_epi32(ptr_r, loadr, 4);
-					const __m256i tmp1 = _mm256_xor_si256(li[0 * u + mi], ri);
-					const __m256i tmp2 = _mm256_cmpeq_epi32(tmp1, weight);
-					const uint32_t tmp = _mm256_movemask_ps((__m256d) tmp2);
+					const uint32_t tmp  = compare_256_32(li[0 * u + mi], ri);
 					m1s[mi] = tmp ? tmp^m1s_mask : 0;
 				}
 
@@ -1035,9 +1324,7 @@ public:
 				#pragma unroll
 				for (uint32_t mi = 0; mi < u; mi++) {
 					const __m256i ri = _mm256_i32gather_epi32(ptr_r, loadr, 4);
-					const __m256i tmp1 = _mm256_xor_si256(li[1 * u + mi], ri);
-					const __m256i tmp2 = _mm256_cmpeq_epi32(tmp1, weight);
-					const uint32_t tmp = _mm256_movemask_ps((__m256d) tmp2);
+					const uint32_t tmp  = compare_256_32(li[1 * u + mi], ri);
 					m1s[mi] = tmp ? tmp^m1s_mask : 0;
 				}
 
@@ -1051,9 +1338,7 @@ public:
 				#pragma unroll
 				for (uint32_t mi = 0; mi < u; mi++) {
 					const __m256i ri = _mm256_i32gather_epi32(ptr_r, loadr, 4);
-					const __m256i tmp1 = _mm256_xor_si256(li[2 * u + mi], ri);
-					const __m256i tmp2 = _mm256_cmpeq_epi32(tmp1, weight);
-					const uint32_t tmp = _mm256_movemask_ps((__m256d) tmp2);
+					const uint32_t tmp  = compare_256_32(li[2 * u + mi], ri);
 					m1s[mi] = tmp ? tmp^m1s_mask : 0;
 				}
 
@@ -1067,9 +1352,7 @@ public:
 				#pragma unroll
 				for (uint32_t mi = 0; mi < u; mi++) {
 					const __m256i ri = _mm256_i32gather_epi32(ptr_r, loadr, 4);
-					const __m256i tmp1 = _mm256_xor_si256(li[3 * u + mi], ri);
-					const __m256i tmp2 = _mm256_cmpeq_epi32(tmp1, weight);
-					const uint32_t tmp = _mm256_movemask_ps((__m256d) tmp2);
+					const uint32_t tmp  = compare_256_32(li[3 * u + mi], ri);
 					m1s[mi] = tmp ? tmp^m1s_mask : 0;
 				}
 
@@ -1083,9 +1366,7 @@ public:
 				#pragma unroll
 				for (uint32_t mi = 0; mi < u; mi++) {
 					const __m256i ri = _mm256_i32gather_epi32(ptr_r, loadr, 4);
-					const __m256i tmp1 = _mm256_xor_si256(li[4 * u + mi], ri);
-					const __m256i tmp2 = _mm256_cmpeq_epi32(tmp1, weight);
-					const uint32_t tmp = _mm256_movemask_ps((__m256d) tmp2);
+					const uint32_t tmp  = compare_256_32(li[4 * u + mi], ri);
 					m1s[mi] = tmp ? tmp^m1s_mask : 0;
 				}
 
@@ -1099,9 +1380,7 @@ public:
 				#pragma unroll
 				for (uint32_t mi = 0; mi < u; mi++) {
 					const __m256i ri = _mm256_i32gather_epi32(ptr_r, loadr, 4);
-					const __m256i tmp1 = _mm256_xor_si256(li[5 * u + mi], ri);
-					const __m256i tmp2 = _mm256_cmpeq_epi32(tmp1, weight);
-					const uint32_t tmp = _mm256_movemask_ps((__m256d) tmp2);
+					const uint32_t tmp  = compare_256_32(li[5 * u + mi], ri);
 					m1s[mi] = tmp ? tmp^m1s_mask : 0;
 				}
 
@@ -1115,9 +1394,7 @@ public:
 				#pragma unroll
 				for (uint32_t mi = 0; mi < u; mi++) {
 					const __m256i ri = _mm256_i32gather_epi32(ptr_r, loadr, 4);
-					const __m256i tmp1 = _mm256_xor_si256(li[6 * u + mi], ri);
-					const __m256i tmp2 = _mm256_cmpeq_epi32(tmp1, weight);
-					const uint32_t tmp = _mm256_movemask_ps((__m256d) tmp2);
+					const uint32_t tmp  = compare_256_32(li[6 * u + mi], ri);
 					m1s[mi] = tmp ? tmp^m1s_mask : 0;
 				}
 
@@ -1131,9 +1408,7 @@ public:
 				#pragma unroll
 				for (uint32_t mi = 0; mi < u; mi++) {
 					const __m256i ri = _mm256_i32gather_epi32(ptr_r, loadr, 4);
-					const __m256i tmp1 = _mm256_xor_si256(li[7 * u + mi], ri);
-					const __m256i tmp2 = _mm256_cmpeq_epi32(tmp1, weight);
-					const uint32_t tmp = _mm256_movemask_ps((__m256d) tmp2);
+					const uint32_t tmp  = compare_256_32(li[7 * u + mi], ri);
 					m1s[mi] = tmp ? tmp^m1s_mask : 0;
 				}
 
@@ -1150,17 +1425,141 @@ public:
 		}
 	}
 
+	template<const uint32_t off>
+	void bruteforce_avx2_256_32_8x8_helper(uint32_t m1sx,
+	                                       const uint8_t *m1s,
+	                                       const uint32_t *ptr_l,
+	                                       const uint32_t *ptr_r,
+	                                       const size_t i, const size_t j) noexcept {
+		while (m1sx > 0) {
+			const uint32_t ctz = off + __builtin_ctz(m1sx);
+			const uint32_t m1sc = m1s[ctz];
+			const uint32_t m1sc_ctz = __builtin_ctz(m1sc);
+
+			const uint32_t test_j = ctz % 8;
+			const uint32_t test_i = ctz / 8;
+
+			// TODO wahrscheinlich auch nicht richtig
+			const uint32_t off_l = test_i * 8 + m1sc_ctz + 0;
+			const uint32_t off_r = test_j * 8 + m1sc_ctz + 0;
+
+			const uint64_t *test_tl = (uint64_t *) (ptr_l + off_l);
+			const uint64_t *test_tr = (uint64_t *) (ptr_l + off_r);
+			if (compare_u64_ptr(test_tl, test_tr)) {
+				found_solution(i + off_l, j + off_r);
+			}
+			
+			// TODO also not correct
+			m1sx = 0;
+			//m1sx ^= 1u << ctz;
+		}
+	}
+
+	/// NOTE: this is hyper optimized for the case if there is only one solution.
+	void bruteforce_avx2_256_32_8x8(const size_t e1,
+	                                const size_t e2) noexcept {
+		ASSERT(n <= 256);
+		ASSERT(n > 128);
+		ASSERT(4 == ELEMENT_NR_LIMBS);
+		constexpr size_t s1 = 0, s2 = 0;
+		ASSERT(e1 >= s1);
+		ASSERT(e2 >= s2);
+
+		uint32_t *ptr_l = (uint32_t *)L1;
+
+		/// difference of the memory location in the right list
+		const __m256i loadr1 = _mm256_setr_epi32(0, 8, 16, 24, 32, 40, 48, 56);
+
+		alignas(32) uint8_t m1s[64];
+
+		/// allowed weight to match on
+		const __m256i zero = _mm256_set1_epi32(0);
+
+		for (size_t i = s1; i < s1 + e1; i += 64, ptr_l += 512) {
+			const __m256i l1 = _mm256_i32gather_epi32(ptr_l +   0, loadr1, 4);
+			const __m256i l2 = _mm256_i32gather_epi32(ptr_l +  64, loadr1, 4);
+			const __m256i l3 = _mm256_i32gather_epi32(ptr_l + 128, loadr1, 4);
+			const __m256i l4 = _mm256_i32gather_epi32(ptr_l + 192, loadr1, 4);
+			const __m256i l5 = _mm256_i32gather_epi32(ptr_l + 256, loadr1, 4);
+			const __m256i l6 = _mm256_i32gather_epi32(ptr_l + 320, loadr1, 4);
+			const __m256i l7 = _mm256_i32gather_epi32(ptr_l + 384, loadr1, 4);
+			const __m256i l8 = _mm256_i32gather_epi32(ptr_l + 448, loadr1, 4);
+
+			uint32_t *ptr_r = (uint32_t *)L2;
+			for (size_t j = s1; j < s2 + e2; j += 64, ptr_r += 512) {
+				const __m256i r1 = _mm256_i32gather_epi32(ptr_r +   0, loadr1, 4);
+				const __m256i r2 = _mm256_i32gather_epi32(ptr_r +  64, loadr1, 4);
+				const __m256i r3 = _mm256_i32gather_epi32(ptr_r + 128, loadr1, 4);
+				const __m256i r4 = _mm256_i32gather_epi32(ptr_r + 192, loadr1, 4);
+				const __m256i r5 = _mm256_i32gather_epi32(ptr_r + 256, loadr1, 4);
+				const __m256i r6 = _mm256_i32gather_epi32(ptr_r + 320, loadr1, 4);
+				const __m256i r7 = _mm256_i32gather_epi32(ptr_r + 384, loadr1, 4);
+				const __m256i r8 = _mm256_i32gather_epi32(ptr_r + 448, loadr1, 4);
+
+				BRUTEFORCE256_32_8x8_STEP(m1s, l1, l2, l3, l4, l5, l6, l7, l8, r1, r2, r3, r4, r5, r6, r7, r8);
+				uint32_t m1s1 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s +  0)), zero));
+				uint32_t m1s2 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s + 32)), zero));
+				if (m1s1 != 0) { bruteforce_avx2_256_32_8x8_helper< 0>(m1s1, m1s, ptr_l, ptr_r, i, j); }
+				if (m1s2 != 0) { bruteforce_avx2_256_32_8x8_helper<32>(m1s2, m1s, ptr_l, ptr_r, i, j); }
+
+				BRUTEFORCE256_32_8x8_STEP(m1s, l1, l2, l3, l4, l5, l6, l7, l8, r2, r3, r4, r5, r6, r7, r8, r1);
+				m1s1 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s +  0)), zero));
+				m1s2 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s + 32)), zero));
+				// TODO from here on not correct rotation not included.
+				if (m1s1 != 0) { bruteforce_avx2_256_32_8x8_helper< 0>(m1s1, m1s, ptr_l, ptr_r, i, j); }
+				if (m1s2 != 0) { bruteforce_avx2_256_32_8x8_helper<32>(m1s2, m1s, ptr_l, ptr_r, i, j); }
+
+				BRUTEFORCE256_32_8x8_STEP(m1s, l1, l2, l3, l4, l5, l6, l7, l8, r3, r4, r5, r6, r7, r8, r1, r2);
+				m1s1 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s +  0)), zero));
+				m1s2 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s + 32)), zero));
+				if (m1s1 != 0) { bruteforce_avx2_256_32_8x8_helper< 0>(m1s1, m1s, ptr_l, ptr_r, i, j); }
+				if (m1s2 != 0) { bruteforce_avx2_256_32_8x8_helper<32>(m1s2, m1s, ptr_l, ptr_r, i, j); }
+
+				BRUTEFORCE256_32_8x8_STEP(m1s, l1, l2, l3, l4, l5, l6, l7, l8, r4, r5, r6, r7, r8, r1, r2, r3);
+				m1s1 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s +  0)), zero));
+				m1s2 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s + 32)), zero));
+				if (m1s1 != 0) { bruteforce_avx2_256_32_8x8_helper< 0>(m1s1, m1s, ptr_l, ptr_r, i, j); }
+				if (m1s2 != 0) { bruteforce_avx2_256_32_8x8_helper<32>(m1s2, m1s, ptr_l, ptr_r, i, j); }
+
+				BRUTEFORCE256_32_8x8_STEP(m1s, l1, l2, l3, l4, l5, l6, l7, l8, r5, r6, r7, r8, r1, r2, r3, r4);
+				m1s1 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s +  0)), zero));
+				m1s2 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s + 32)), zero));
+				if (m1s1 != 0) { bruteforce_avx2_256_32_8x8_helper< 0>(m1s1, m1s, ptr_l, ptr_r, i, j); }
+				if (m1s2 != 0) { bruteforce_avx2_256_32_8x8_helper<32>(m1s2, m1s, ptr_l, ptr_r, i, j); }
+
+				BRUTEFORCE256_32_8x8_STEP(m1s, l1, l2, l3, l4, l5, l6, l7, l8, r6, r7, r8, r1, r2, r3, r4, r5);
+				m1s1 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s +  0)), zero));
+				m1s2 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s + 32)), zero));
+				if (m1s1 != 0) { bruteforce_avx2_256_32_8x8_helper< 0>(m1s1, m1s, ptr_l, ptr_r, i, j); }
+				if (m1s2 != 0) { bruteforce_avx2_256_32_8x8_helper<32>(m1s2, m1s, ptr_l, ptr_r, i, j); }
+
+				BRUTEFORCE256_32_8x8_STEP(m1s, l1, l2, l3, l4, l5, l6, l7, l8, r7, r8, r1, r2, r3, r4, r5, r6);
+				m1s1 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s +  0)), zero));
+				m1s2 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s + 32)), zero));
+				if (m1s1 != 0) { bruteforce_avx2_256_32_8x8_helper< 0>(m1s1, m1s, ptr_l, ptr_r, i, j); }
+				if (m1s2 != 0) { bruteforce_avx2_256_32_8x8_helper<32>(m1s2, m1s, ptr_l, ptr_r, i, j); }
+
+				BRUTEFORCE256_32_8x8_STEP(m1s, l1, l2, l3, l4, l5, l6, l7, l8, r8, r1, r2, r3, r4, r5, r6, r7);
+				m1s1 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s +  0)), zero));
+				m1s2 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s + 32)), zero));
+				if (m1s1 != 0) { bruteforce_avx2_256_32_8x8_helper< 0>(m1s1, m1s, ptr_l, ptr_r, i, j); }
+				if (m1s2 != 0) { bruteforce_avx2_256_32_8x8_helper<32>(m1s2, m1s, ptr_l, ptr_r, i, j); }
+			}
+		}
+	}
+
 	/// bruteforce the two lists between the given start and end indices.
 	/// NOTE: uses avx2
 	/// NOTE: only in limb comparison possible. inter limb (e.g. bit 43...83) is impossible.
 	/// NOTE: assumes that list size is multiple of 4.
 	/// NOTE: in comparison to `bruteforce_avx_256` this implementation used no `gather`
 	///		instruction, but rather direct (aligned) loads.
+	/// NOTE: only works if exact matching is active
 	/// \param e1 end index of list 1
 	/// \param e2 end index list 2
 	void bruteforce_avx2_256_v2(const size_t e1,
 	                            const size_t e2) noexcept {
-
+		ASSERT(EXACT);
 		ASSERT(n <= 256);
 		ASSERT(n > 128);
 		ASSERT(4 == ELEMENT_NR_LIMBS);
@@ -1193,206 +1592,6 @@ public:
 		}
 	}
 
-	/// NOTE: in comparison to the other version `bruteforce_avx2_64` this implementation
-	///			assumes that the elements to compare are fully compared on all n variables
-	///  		e.g. ELEMENT_NR_LIMBS == 1
-	/// \param e1 end index of list 1
-	/// \param e2 end index list 2
-	void bruteforce_avx2_64_1x1(const size_t e1,
-	                            const size_t e2) noexcept {
-		ASSERT(ELEMENT_NR_LIMBS == 1);
-		ASSERT(n <= 64);
-		ASSERT(n >= 33);
-		
-		constexpr size_t s1 = 0, s2 = 0;
-		ASSERT(e1 >= s1);
-		ASSERT(e2 >= s2);
-
-		/// allowed weight to match on
-		const __m256i weight = _mm256_setr_epi64x(0, 0, 0, 0);
-
-		for (size_t i = s1; i < e1; ++i) {
-			const __m256i li = _mm256_set1_epi64x(L1[i][0]);
-
-			/// NOTE: only possible because L2 is a continuous memory block
-			__m256i *ptr_r = (__m256i *)L2;
-
-			for (size_t j = s2; j < s2+(e2+3)/4; ++j, ptr_r += 1) {
-				const __m256i ri = LOAD256(ptr_r);
-				const __m256i tmp1 = _mm256_xor_si256(li, ri);
-				const __m256i tmp2 = _mm256_cmpeq_epi64(tmp1, weight);
-				const int m = _mm256_movemask_pd((__m256d) tmp2);
-
-				if (m) {
-					const size_t jprime = j*4 + __builtin_ctz(m);
-					// std::cout << L1[i][0] << " " << L2[jprime][0] << " " << L2[jprime+1][0] << " " << L2[jprime-1][0] << "\n";
-					found_solution(i, jprime);
-				}
-			}
-		}
-	}
-
-	/// NOTE: in comparison to the other version `bruteforce_avx2_64` this implementation
-	///			assumes that the elements to compare are fully compared on all n variables
-	///  		e.g. ELEMENT_NR_LIMBS == 1
-	/// NOTE: compared to `bruteforce_avx2_64_1x1` this unrolls `u` elementes in the left
-	///			list and `v` elements on the right.
-	/// \param e1 end index of list 1
-	/// \param e2 end index list 2
-	template<const uint32_t u, const uint32_t v>
-	void bruteforce_avx2_64_uxv(const size_t e1,
-	                            const size_t e2) noexcept {
-		ASSERT(ELEMENT_NR_LIMBS == 1);
-		ASSERT(n <= 64);
-		ASSERT(n >= 33);
-
-		constexpr size_t s1 = 0, s2 = 0;
-		ASSERT(e1 >= s1);
-		ASSERT(e2 >= s2);
-
-		__m256i lii[u], rii[v];
-
-		/// allowed weight to match on
-		const __m256i weight = _mm256_setr_epi64x(0, 0, 0, 0);
-
-		for (size_t i = s1; i < e1; i += u) {
-
-			#pragma unroll
-			for (uint32_t j = 0; j < u; ++j) {
-				lii[j] = _mm256_set1_epi64x(L1[i + j][0]);
-			}
-
-			/// NOTE: only possible because L2 is a continuous memory block
-			__m256i *ptr_r = (__m256i *)L2;
-
-			for (size_t j = s2; j < s2+(e2+3)/4; j += v, ptr_r += v) {
-
-				#pragma unroll
-				for (uint32_t s = 0; s < v; ++s) {
-					rii[s] = LOAD256(ptr_r + s);
-				}
-
-				#pragma unroll
-				for (uint32_t a1 = 0; a1 < u; ++a1) {
-					const __m256i tmp1 = lii[a1];
-					#pragma unroll
-					for (uint32_t a2 = 0; a2 < v; ++a2) {
-						const __m256i tmp2 = rii[a2];
-						const __m256i t1 = _mm256_xor_si256(tmp1, tmp2);
-						const __m256i t2 = _mm256_cmpeq_epi64(t1, weight);
-						const int m = _mm256_movemask_pd((__m256d) t2);
-
-						if (m) {
-							const size_t jprime = j*4 + a2*4 + __builtin_ctz(m);
-							const size_t iprime = i + a1;
-							//std::cout << L1[iprime][0] << " " << L2[jprime][0] << " " << L2[jprime+1][0] << " " << L2[jprime-1][0] << "\n";
-							found_solution(iprime, jprime);
-						}
-					}
-				}
-			}
-		}
-	}
-
-	/// NOTE: in comparison to the other version `bruteforce_avx2_64` this implementation
-	///			assumes that the elements to compare are fully compared on all n variables
-	///  		e.g. ELEMENT_NR_LIMBS == 1
-	/// NOTE: compared to `bruteforce_avx2_64_1x1` this unrolls `u` elementes in the left
-	///			list and `v` elements on the right.
-	/// NOTE: compared to `bruteforce_avx2_64_uxv` this function is not only comparing 1
-	///			element of the left list with u elements from the right. Side
-	///			Internally the loop is unrolled to compare u*4 elements to v on the right
-	/// NOTE: assumes the input list to of length multiple of 16
-	/// \param e1 end index of list 1
-	/// \param e2 end index list 2
-	template<const uint32_t u, const uint32_t v>
-	void bruteforce_avx2_64_uxv_shuffle(const size_t e1,
-	                                    const size_t e2) noexcept {
-		ASSERT(ELEMENT_NR_LIMBS == 1);
-		ASSERT(n <= 64);
-		ASSERT(n >= 33);
-
-		constexpr size_t s1 = 0, s2 = 0;
-		ASSERT(e1 >= s1);
-		ASSERT(e2 >= s2);
-
-		__m256i lii[u], rii[v];
-		__m256i *ptr_l = (__m256i *)L1;
-
-		/// allowed weight to match on
-		const __m256i weight = _mm256_setr_epi64x(0, 0, 0, 0);
-
-		for (size_t i = s1; i < s1 + (e1+3)/4; i += u, ptr_l += u) {
-
-			#pragma unroll
-			for (uint32_t j = 0; j < u; ++j) {
-				lii[j] = LOAD256(ptr_l + j);
-			}
-
-			/// NOTE: only possible because L2 is a continuous memory block
-			__m256i *ptr_r = (__m256i *)L2;
-
-			for (size_t j = s2; j < s2+(e2+3)/4; j += v, ptr_r += v) {
-
-				#pragma unroll
-				for (uint32_t s = 0; s < v; ++s) {
-					rii[s] = LOAD256(ptr_r + s);
-				}
-
-				#pragma unroll
-				for (uint32_t a1 = 0; a1 < u; ++a1) {
-					const __m256i tmp1 = lii[a1];
-					#pragma unroll
-					for (uint32_t a2 = 0; a2 < v; ++a2) {
-						__m256i tmp2 = rii[a2];
-
-						__m256i t1 = _mm256_xor_si256(tmp1, tmp2);
-						__m256i t2 = _mm256_cmpeq_epi64(t1, weight);
-						int m = _mm256_movemask_pd((__m256d) t2);
-						if (m) {
-							const size_t jprime = j*4 + a2*4 + __builtin_ctz(m);
-							const size_t iprime = i*4 + a1*4 + __builtin_ctz(m);
-							//std::cout << L1[iprime][0] << " " << L2[jprime][0] << " " << L2[jprime+1][0] << " " << L2[jprime-1][0] << "\n";
-							found_solution(iprime, jprime);
-						}
-
-						tmp2 = _mm256_permute4x64_epi64(tmp2, 0b10010011);
-						t1 = _mm256_xor_si256(tmp1, tmp2);
-						t2 = _mm256_cmpeq_epi64(t1, weight);
-						m = _mm256_movemask_pd((__m256d) t2);
-						if (m) {
-							const size_t jprime = j*4 + a2*4 + __builtin_ctz(m) + 3;
-							const size_t iprime = i*4 + a1*4 + __builtin_ctz(m);
-							//std::cout << L1[iprime][0] << " " << L2[jprime][0] << " " << L2[jprime+1][0] << " " << L2[jprime-1][0] << "\n";
-							found_solution(iprime, jprime);
-						}
-
-						tmp2 = _mm256_permute4x64_epi64(tmp2, 0b10010011);
-						t1 = _mm256_xor_si256(tmp1, tmp2);
-						t2 = _mm256_cmpeq_epi64(t1, weight);
-						m = _mm256_movemask_pd((__m256d) t2);
-						if (m) {
-							const size_t jprime = j*4 + a2*4 + __builtin_ctz(m) + 2;
-							const size_t iprime = i*4 + a1*4+ __builtin_ctz(m);
-							//std::cout << L1[iprime][0] << " " << L2[jprime][0] << " " << L2[jprime+1][0] << " " << L2[jprime-1][0] << "\n";
-							found_solution(iprime, jprime);
-						}
-
-						tmp2 = _mm256_permute4x64_epi64(tmp2, 0b10010011);
-						t1 = _mm256_xor_si256(tmp1, tmp2);
-						t2 = _mm256_cmpeq_epi64(t1, weight);
-						m = _mm256_movemask_pd((__m256d) t2);
-						if (m) {
-							const size_t jprime = j*4 + a2*4 + __builtin_ctz(m) + 1;
-							const size_t iprime = i*4 + a1*4 + __builtin_ctz(m);
-							//std::cout << L1[iprime][0] << " " << L2[jprime][0] << " " << L2[jprime+1][0] << " " << L2[jprime-1][0] << "\n";
-							found_solution(iprime, jprime);
-						}
-					}
-				}
-			}
-		}
-	}
 
 	/// NOTE: uses avx2 instructions
 	/// NOTE: currently not correct
@@ -1644,6 +1843,7 @@ public:
 
 	/// simple test function
 	bool run() {
+		return 1;
 		//Element *ptr = (Element *) malloc(10 * sizeof(T) * ELEMENT_NR_LIMBS);
 		//for (int i = 0; i < 2; ++i) {
 		//	ptr[i][0] = i;
@@ -1663,16 +1863,17 @@ public:
 		generate_random_instance();
 		
 		//bruteforce_32(LIST_SIZE, LIST_SIZE);
-		bruteforce_avx2_32(LIST_SIZE, LIST_SIZE);
+		//bruteforce_avx2_32(LIST_SIZE, LIST_SIZE);
 		//bruteforce_avx2_64(LIST_SIZE, LIST_SIZE);
-		//bruteforce_avx2_128(LIST_SIZE, LIST_SIZE);
-		//bruteforce_avx2_256(LIST_SIZE, LIST_SIZE);
-		//bruteforce_avx2_256_v2(LIST_SIZE, LIST_SIZE);
-		//bruteforce_avx2_256_ux4<8>(LIST_SIZE, LIST_SIZE);
-		//bruteforce_avx2_256_32_ux8<2>(LIST_SIZE, LIST_SIZE);
 		//bruteforce_avx2_64_1x1(LIST_SIZE, LIST_SIZE);
 		//bruteforce_avx2_64_uxv<4,4>(LIST_SIZE, LIST_SIZE);
 		//bruteforce_avx2_64_uxv_shuffle<4,4>(LIST_SIZE, LIST_SIZE);
+		//bruteforce_avx2_128(LIST_SIZE, LIST_SIZE);
+		//bruteforce_avx2_256(LIST_SIZE, LIST_SIZE);
+		//bruteforce_avx2_256_ux4<8>(LIST_SIZE, LIST_SIZE);
+		//bruteforce_avx2_256_32_ux8<2>(LIST_SIZE, LIST_SIZE);
+		bruteforce_avx2_256_32_8x8(LIST_SIZE, LIST_SIZE);
+
 		//avx2_nn64_on32<r>(LIST_SIZE, LIST_SIZE);
 		//avx2_nn<r>(LIST_SIZE, LIST_SIZE);
 		bool correct = all_solutions_correct();
@@ -1690,7 +1891,6 @@ public:
 	}
 
 	uint64_t bench() {
-		return 1;
 		random_seed(time(NULL));
 		generate_random_instance();
 		uint64_t ret = 0;
@@ -1743,11 +1943,17 @@ public:
 		//ret += solutions_nr;
 		//solutions_nr = 0;
 
-		//t = clock();
-		//bruteforce_avx2_256_32_ux8<8>(LIST_SIZE, LIST_SIZE);
-		//std::cout << "bruteforce_avx2_256_32_ux8<8>: " << double(clock() - t)/CLOCKS_PER_SEC << "\n";
-		//ret += solutions_nr;
-		//solutions_nr = 0;
+		t = clock();
+		bruteforce_avx2_256_32_ux8<8>(LIST_SIZE, LIST_SIZE);
+		std::cout << "bruteforce_avx2_256_32_ux8<8>: " << double(clock() - t)/CLOCKS_PER_SEC << "\n";
+		ret += solutions_nr;
+		solutions_nr = 0;
+
+		t = clock();
+		bruteforce_avx2_256_32_8x8(LIST_SIZE, LIST_SIZE);
+		std::cout << "bruteforce_avx2_256_32_8x8: " << double(clock() - t)/CLOCKS_PER_SEC << "\n";
+		ret += solutions_nr;
+		solutions_nr = 0;
 
 		//t = clock();
 		//bruteforce_avx2_256_v2(LIST_SIZE, LIST_SIZE);
