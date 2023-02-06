@@ -110,81 +110,81 @@ public:
 
 #define BRUTEFORCE256_64_4x4_STEP(stack, a0, a1, a2, a3, b0, b1, b2, b3)    \
 	stack[ 0] = (uint8_t)compare_256_64(a0, b0); 	\
-	stack[ 1] = (uint8_t)compare_256_64(a0, b1); 	\
-	stack[ 2] = (uint8_t)compare_256_64(a0, b2); 	\
-	stack[ 3] = (uint8_t)compare_256_64(a0, b3); 	\
-	stack[ 4] = (uint8_t)compare_256_64(a1, b0); 	\
-	stack[ 5] = (uint8_t)compare_256_64(a1, b1); 	\
-	stack[ 6] = (uint8_t)compare_256_64(a1, b2); 	\
-	stack[ 7] = (uint8_t)compare_256_64(a1, b3); 	\
-	stack[ 8] = (uint8_t)compare_256_64(a2, b0); 	\
-	stack[ 9] = (uint8_t)compare_256_64(a2, b1); 	\
-	stack[10] = (uint8_t)compare_256_64(a2, b2); 	\
-	stack[11] = (uint8_t)compare_256_64(a2, b3); 	\
-	stack[12] = (uint8_t)compare_256_64(a3, b0); 	\
-	stack[13] = (uint8_t)compare_256_64(a3, b1); 	\
-	stack[14] = (uint8_t)compare_256_64(a3, b2); 	\
-	stack[15] = (uint8_t)compare_256_64(a3, b3); 	\
-	b0 = _mm256_permute4x64_epi64(b0, 0b00111001); 	\
-	b1 = _mm256_permute4x64_epi64(b1, 0b00111001); 	\
-	b2 = _mm256_permute4x64_epi64(b2, 0b00111001); 	\
-	b3 = _mm256_permute4x64_epi64(b3, 0b00111001); 	\
-	stack[16] = (uint8_t)compare_256_64(a0, b0); 	\
-	stack[17] = (uint8_t)compare_256_64(a0, b1); 	\
-	stack[18] = (uint8_t)compare_256_64(a0, b2); 	\
-	stack[19] = (uint8_t)compare_256_64(a0, b3); 	\
-	stack[20] = (uint8_t)compare_256_64(a1, b0); 	\
-	stack[21] = (uint8_t)compare_256_64(a1, b1); 	\
-	stack[22] = (uint8_t)compare_256_64(a1, b2); 	\
-	stack[23] = (uint8_t)compare_256_64(a1, b3); 	\
-	stack[24] = (uint8_t)compare_256_64(a2, b0); 	\
-	stack[25] = (uint8_t)compare_256_64(a2, b1); 	\
-	stack[26] = (uint8_t)compare_256_64(a2, b2); 	\
-	stack[27] = (uint8_t)compare_256_64(a2, b3); 	\
-	stack[28] = (uint8_t)compare_256_64(a3, b0); 	\
-	stack[29] = (uint8_t)compare_256_64(a3, b1); 	\
-	stack[30] = (uint8_t)compare_256_64(a3, b2); 	\
-	stack[31] = (uint8_t)compare_256_64(a3, b3); 	\
-	b0 = _mm256_permute4x64_epi64(b0, 0b00111001); 	\
-	b1 = _mm256_permute4x64_epi64(b1, 0b00111001); 	\
-	b2 = _mm256_permute4x64_epi64(b2, 0b00111001); 	\
-	b3 = _mm256_permute4x64_epi64(b3, 0b00111001); 	\
-	stack[32] = (uint8_t)compare_256_64(a0, b0); 	\
-	stack[33] = (uint8_t)compare_256_64(a0, b1); 	\
-	stack[34] = (uint8_t)compare_256_64(a0, b2); 	\
-	stack[35] = (uint8_t)compare_256_64(a0, b3); 	\
-	stack[36] = (uint8_t)compare_256_64(a1, b0); 	\
-	stack[37] = (uint8_t)compare_256_64(a1, b1); 	\
-	stack[38] = (uint8_t)compare_256_64(a1, b2); 	\
-	stack[39] = (uint8_t)compare_256_64(a1, b3); 	\
-	stack[40] = (uint8_t)compare_256_64(a2, b0); 	\
-	stack[41] = (uint8_t)compare_256_64(a2, b1); 	\
-	stack[42] = (uint8_t)compare_256_64(a2, b2); 	\
-	stack[43] = (uint8_t)compare_256_64(a2, b3); 	\
-	stack[44] = (uint8_t)compare_256_64(a3, b0); 	\
-	stack[45] = (uint8_t)compare_256_64(a3, b1); 	\
-	stack[46] = (uint8_t)compare_256_64(a3, b2); 	\
-	stack[47] = (uint8_t)compare_256_64(a3, b3); 	\
-	b0 = _mm256_permute4x64_epi64(b0, 0b00111001); 	\
-	b1 = _mm256_permute4x64_epi64(b1, 0b00111001); 	\
-	b2 = _mm256_permute4x64_epi64(b2, 0b00111001); 	\
-	b3 = _mm256_permute4x64_epi64(b3, 0b00111001); 	\
-	stack[48] = (uint8_t)compare_256_64(a0, b0); 	\
-	stack[49] = (uint8_t)compare_256_64(a0, b1); 	\
-	stack[50] = (uint8_t)compare_256_64(a0, b2); 	\
-	stack[51] = (uint8_t)compare_256_64(a0, b3); 	\
-	stack[52] = (uint8_t)compare_256_64(a1, b0); 	\
-	stack[53] = (uint8_t)compare_256_64(a1, b1); 	\
-	stack[54] = (uint8_t)compare_256_64(a1, b2); 	\
-	stack[55] = (uint8_t)compare_256_64(a1, b3); 	\
-	stack[56] = (uint8_t)compare_256_64(a2, b0); 	\
-	stack[57] = (uint8_t)compare_256_64(a2, b1); 	\
-	stack[58] = (uint8_t)compare_256_64(a2, b2); 	\
-	stack[59] = (uint8_t)compare_256_64(a2, b3); 	\
-	stack[60] = (uint8_t)compare_256_64(a3, b0); 	\
-	stack[61] = (uint8_t)compare_256_64(a3, b1); 	\
-	stack[62] = (uint8_t)compare_256_64(a3, b2); 	\
-	stack[63] = (uint8_t)compare_256_64(a3, b3);
+	stack[ 0] = (uint8_t)compare_256_64(a0, b1); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a0, b2); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a0, b3); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a1, b0); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a1, b1); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a1, b2); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a1, b3); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a2, b0); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a2, b1); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a2, b2); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a2, b3); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a3, b0); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a3, b1); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a3, b2); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a3, b3); 	\
+	b0 = _mm256_permute4x64_epi64(b0, 0b10010011); 	\
+	b1 = _mm256_permute4x64_epi64(b1, 0b10010011); 	\
+	b2 = _mm256_permute4x64_epi64(b2, 0b10010011); 	\
+	b3 = _mm256_permute4x64_epi64(b3, 0b10010011); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a0, b0); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a0, b1); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a0, b2); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a0, b3); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a1, b0); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a1, b1); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a1, b2); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a1, b3); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a2, b0); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a2, b1); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a2, b2); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a2, b3); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a3, b0); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a3, b1); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a3, b2); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a3, b3); 	\
+	b0 = _mm256_permute4x64_epi64(b0, 0b10010011); 	\
+	b1 = _mm256_permute4x64_epi64(b1, 0b10010011); 	\
+	b2 = _mm256_permute4x64_epi64(b2, 0b10010011); 	\
+	b3 = _mm256_permute4x64_epi64(b3, 0b10010011); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a0, b0); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a0, b1); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a0, b2); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a0, b3); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a1, b0); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a1, b1); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a1, b2); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a1, b3); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a2, b0); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a2, b1); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a2, b2); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a2, b3); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a3, b0); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a3, b1); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a3, b2); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a3, b3); 	\
+	b0 = _mm256_permute4x64_epi64(b0, 0b10010011); 	\
+	b1 = _mm256_permute4x64_epi64(b1, 0b10010011); 	\
+	b2 = _mm256_permute4x64_epi64(b2, 0b10010011); 	\
+	b3 = _mm256_permute4x64_epi64(b3, 0b10010011); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a0, b0); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a0, b1); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a0, b2); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a0, b3); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a1, b0); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a1, b1); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a1, b2); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a1, b3); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a2, b0); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a2, b1); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a2, b2); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a2, b3); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a3, b0); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a3, b1); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a3, b2); 	\
+	stack[ 0] = (uint8_t)compare_256_64(a3, b3);
 
 // good values
 //      n   N   r  k    dk   L     B
@@ -337,8 +337,8 @@ public:
 		generate_random_lists(L2);
 
 		// generate solution:
-		solution_l = fastrandombytes_uint64() % LIST_SIZE;
-		solution_r = fastrandombytes_uint64() % LIST_SIZE;
+		solution_l = 0;//fastrandombytes_uint64() % LIST_SIZE;
+		solution_r = 0;//fastrandombytes_uint64() % LIST_SIZE;
 		//std::cout << "sols at: " << solution_l << " " << solution_r << "\n";
 
 		if constexpr (EXACT) {
@@ -715,14 +715,14 @@ public:
 	inline int compare_256_64(const __m256i in1, const __m256i in2) {
 		if constexpr(EXACT) {
 			const __m256i tmp2 = _mm256_cmpeq_epi64(in1, in2);
-			return _mm256_movemask_pd((__m256d) tmp2);
+			return _mm256_movemask_pd((__m256) tmp2);
 		} else {
 			const static __m256i weight = _mm256_set1_epi64x(d+1);
 
 			const __m256i tmp1 = _mm256_xor_si256(in1, in2);
 			const __m256i pop = popcount_avx2_64(tmp1);
 			const __m256i tmp2 = _mm256_cmpgt_epi64(weight, pop);
-			return _mm256_movemask_pd((__m256d) tmp2);
+			return _mm256_movemask_pd((__m256) tmp2);
 		}
 	}
 
@@ -774,7 +774,7 @@ public:
 		const __m256i loadr = _mm256_setr_epi32(0, 1, 2, 3, 4, 5, 6, 7);
 
 		/// NOTE: only possible because L2 is a continuous memory block
-		const uint32_t *ptr_r = (uint32_t *)L2;
+		const T *ptr_r = (T *)L2;
 
 		for (size_t i = s1; i < e1; ++i) {
 			// NOTE: implicit typecast because T = uint64
@@ -1276,7 +1276,7 @@ public:
 					m1s[mi] = tmp ? tmp^m1s_mask : 0;
 				}
 
-				m1s_tmp = _mm256_movemask_ps((__m256) LOAD256((__m256i *)m1s));
+				m1s_tmp = _mm256_movemask_ps((__m256d) LOAD256((__m256i *)m1s));
 				if (m1s_tmp == 0) {
 					continue;
 				}
@@ -1289,7 +1289,7 @@ public:
 					m1s[mi] = tmp ? tmp^m1s_mask : 0;
 				}
 
-				m1s_tmp = _mm256_movemask_ps((__m256) LOAD256((__m256i *)m1s));
+				m1s_tmp = _mm256_movemask_ps((__m256d) LOAD256((__m256i *)m1s));
 				if (m1s_tmp == 0) {
 					continue;
 				}
@@ -1302,7 +1302,7 @@ public:
 					m1s[mi] = tmp ? tmp^m1s_mask : 0;
 				}
 
-				m1s_tmp = _mm256_movemask_ps((__m256) LOAD256((__m256i *)m1s));
+				m1s_tmp = _mm256_movemask_ps((__m256d) LOAD256((__m256i *)m1s));
 				if (m1s_tmp == 0) {
 					continue;
 				}
@@ -1315,7 +1315,7 @@ public:
 					m1s[mi] = tmp ? tmp^m1s_mask : 0;
 				}
 
-				m1s_tmp = _mm256_movemask_ps((__m256) LOAD256((__m256i *)m1s));
+				m1s_tmp = _mm256_movemask_ps((__m256d) LOAD256((__m256i *)m1s));
 				if (m1s_tmp) {
 					const size_t jprime = j*4;
 					const uint32_t m1s_ctz = __builtin_ctz(m1s_tmp);
@@ -1391,7 +1391,7 @@ public:
 					m1s[mi] = tmp ? tmp^m1s_mask : 0;
 				}
 
-				m1s_tmp = _mm256_movemask_ps((__m256) LOAD256((__m256i *)m1s));
+				m1s_tmp = _mm256_movemask_ps((__m256d) LOAD256((__m256i *)m1s));
 				if (m1s_tmp == 0) {
 					continue;
 				}
@@ -1405,7 +1405,7 @@ public:
 					m1s[mi] = tmp ? tmp^m1s_mask : 0;
 				}
 
-				m1s_tmp = _mm256_movemask_ps((__m256) LOAD256((__m256i *)m1s));
+				m1s_tmp = _mm256_movemask_ps((__m256d) LOAD256((__m256i *)m1s));
 				if (m1s_tmp == 0) {
 					continue;
 				}
@@ -1419,7 +1419,7 @@ public:
 					m1s[mi] = tmp ? tmp^m1s_mask : 0;
 				}
 
-				m1s_tmp = _mm256_movemask_ps((__m256) LOAD256((__m256i *)m1s));
+				m1s_tmp = _mm256_movemask_ps((__m256d) LOAD256((__m256i *)m1s));
 				if (m1s_tmp == 0) {
 					continue;
 				}
@@ -1433,7 +1433,7 @@ public:
 					m1s[mi] = tmp ? tmp^m1s_mask : 0;
 				}
 
-				m1s_tmp = _mm256_movemask_ps((__m256) LOAD256((__m256i *)m1s));
+				m1s_tmp = _mm256_movemask_ps((__m256d) LOAD256((__m256i *)m1s));
 				if (m1s_tmp == 0) {
 					continue;
 				}
@@ -1447,7 +1447,7 @@ public:
 					m1s[mi] = tmp ? tmp^m1s_mask : 0;
 				}
 
-				m1s_tmp = _mm256_movemask_ps((__m256) LOAD256((__m256i *)m1s));
+				m1s_tmp = _mm256_movemask_ps((__m256d) LOAD256((__m256i *)m1s));
 				if (m1s_tmp == 0) {
 					continue;
 				}
@@ -1461,7 +1461,7 @@ public:
 					m1s[mi] = tmp ? tmp^m1s_mask : 0;
 				}
 
-				m1s_tmp = _mm256_movemask_ps((__m256) LOAD256((__m256i *)m1s));
+				m1s_tmp = _mm256_movemask_ps((__m256d) LOAD256((__m256i *)m1s));
 				if (m1s_tmp == 0) {
 					continue;
 				}
@@ -1475,7 +1475,7 @@ public:
 					m1s[mi] = tmp ? tmp^m1s_mask : 0;
 				}
 
-				m1s_tmp = _mm256_movemask_ps((__m256) LOAD256((__m256i *)m1s));
+				m1s_tmp = _mm256_movemask_ps((__m256d) LOAD256((__m256i *)m1s));
 				if (m1s_tmp == 0) {
 					continue;
 				}
@@ -1489,7 +1489,7 @@ public:
 					m1s[mi] = tmp ? tmp^m1s_mask : 0;
 				}
 
-				m1s_tmp = _mm256_movemask_ps((__m256) LOAD256((__m256i *)m1s));
+				m1s_tmp = _mm256_movemask_ps((__m256d) LOAD256((__m256i *)m1s));
 				if (m1s_tmp) {
 					const size_t jprime = j*8;
 					const uint32_t m1s_ctz = __builtin_ctz(m1s_tmp);
@@ -1521,11 +1521,11 @@ public:
 			const uint32_t off_r = test_j * 8 + m1sc_ctz + 0;
 
 			const uint64_t *test_tl = (uint64_t *) (ptr_l + off_l);
-			const uint64_t *test_tr = (uint64_t *) (ptr_r + off_r);
+			const uint64_t *test_tr = (uint64_t *) (ptr_l + off_r);
 			if (compare_u64_ptr(test_tl, test_tr)) {
 				found_solution(i + off_l, j + off_r);
 			}
-
+			
 			// TODO also not correct
 			m1sx = 0;
 			//m1sx ^= 1u << ctz;
@@ -1625,35 +1625,6 @@ public:
 		}
 	}
 
-	template<const uint32_t off>
-	void bruteforce_avx2_256_64_4x4_helper(uint32_t m1sx,
-	                                       const uint8_t *m1s,
-	                                       const uint64_t *ptr_l,
-	                                       const uint64_t *ptr_r,
-	                                       const size_t i, const size_t j) noexcept {
-		while (m1sx > 0) {
-			const uint32_t ctz = off + __builtin_ctz(m1sx);
-			const uint32_t m1sc = m1s[ctz];
-			const uint32_t m1sc_ctz = __builtin_ctz(m1sc);
-
-			const uint32_t test_j = ctz % 4;
-			const uint32_t test_inner_j = ctz / 16;
-			const uint32_t test_i = (ctz % 16)/4;
-
-			// TODO wahrscheinlich auch nicht richtig
-			const uint32_t off_l = test_i * 4;
-			const uint32_t off_r = test_j * 4 + test_inner_j;
-
-			const T *test_tl = ptr_l + off_l*4;
-			const T *test_tr = ptr_r + off_r*4;
-			if (compare_u64_ptr(test_tl, test_tr)) {
-				found_solution(i + off_l, j + off_r);
-			}
-
-			m1sx ^= 1u << ctz;
-		}
-	}
-
 	/// NOTE: this is hyper optimized for the case if there is only one solution.
 	void bruteforce_avx2_256_64_4x4(const size_t e1,
 	                                const size_t e2) noexcept {
@@ -1664,7 +1635,7 @@ public:
 		ASSERT(e1 >= s1);
 		ASSERT(e2 >= s2);
 
-		T *ptr_l = (T *)L1;
+		uint32_t *ptr_l = (uint32_t *)L1;
 
 		/// difference of the memory location in the right list
 		const __m128i loadr1 = {       (4ull << 32u), ( 8ul) | (12ull << 32u)};
@@ -1674,24 +1645,71 @@ public:
 		/// allowed weight to match on
 		const __m256i zero = _mm256_set1_epi32(0);
 
-		for (size_t i = s1; i < s1 + e1; i += 16, ptr_l += 64) {
-			const __m256i l1 = _mm256_i32gather_epi64(ptr_l +  0, loadr1, 8);
-			const __m256i l2 = _mm256_i32gather_epi64(ptr_l + 16, loadr1, 8);
-			const __m256i l3 = _mm256_i32gather_epi64(ptr_l + 32, loadr1, 8);
-			const __m256i l4 = _mm256_i32gather_epi64(ptr_l + 48, loadr1, 8);
+		for (size_t i = s1; i < s1 + e1; i += 64, ptr_l += 512) {
+			const __m256i l1 = _mm256_i32gather_epi64(ptr_l +   0, loadr1, 8);
+			const __m256i l2 = _mm256_i32gather_epi64(ptr_l +  64, loadr1, 8);
+			const __m256i l3 = _mm256_i32gather_epi64(ptr_l + 128, loadr1, 8);
+			const __m256i l4 = _mm256_i32gather_epi64(ptr_l + 192, loadr1, 8);
 
-			T *ptr_r = (T *)L2;
-			for (size_t j = s1; j < s2 + e2; j += 16, ptr_r += 64) {
-				__m256i r1 = _mm256_i32gather_epi64(ptr_r +  0, loadr1, 8);
-				__m256i r2 = _mm256_i32gather_epi64(ptr_r + 16, loadr1, 8);
-				__m256i r3 = _mm256_i32gather_epi64(ptr_r + 32, loadr1, 8);
-				__m256i r4 = _mm256_i32gather_epi64(ptr_r + 48, loadr1, 8);
+			uint32_t *ptr_r = (uint32_t *)L2;
+			for (size_t j = s1; j < s2 + e2; j += 64, ptr_r += 512) {
+				const __m256i r1 = _mm256_i32gather_epi32(ptr_r +   0, loadr1, 4);
+				const __m256i r2 = _mm256_i32gather_epi32(ptr_r +  64, loadr1, 4);
+				const __m256i r3 = _mm256_i32gather_epi32(ptr_r + 128, loadr1, 4);
+				const __m256i r4 = _mm256_i32gather_epi32(ptr_r + 192, loadr1, 4);
+				const __m256i r5 = _mm256_i32gather_epi32(ptr_r + 256, loadr1, 4);
+				const __m256i r6 = _mm256_i32gather_epi32(ptr_r + 320, loadr1, 4);
+				const __m256i r7 = _mm256_i32gather_epi32(ptr_r + 384, loadr1, 4);
+				const __m256i r8 = _mm256_i32gather_epi32(ptr_r + 448, loadr1, 4);
 
-				BRUTEFORCE256_64_4x4_STEP(m1s, l1, l2, l3, l4, r1, r2, r3, r4);
+				BRUTEFORCE256_32_8x8_STEP(m1s, l1, l2, l3, l4, l5, l6, l7, l8, r1, r2, r3, r4, r5, r6, r7, r8);
 				uint32_t m1s1 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s +  0)), zero));
 				uint32_t m1s2 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s + 32)), zero));
-				if (m1s1 != 0) { bruteforce_avx2_256_64_4x4_helper< 0>(m1s1, m1s, ptr_l, ptr_r, i, j); }
-				if (m1s2 != 0) { bruteforce_avx2_256_64_4x4_helper<32>(m1s2, m1s, ptr_l, ptr_r, i, j); }
+				if (m1s1 != 0) { bruteforce_avx2_256_32_8x8_helper< 0>(m1s1, m1s, ptr_l, ptr_r, i, j); }
+				if (m1s2 != 0) { bruteforce_avx2_256_32_8x8_helper<32>(m1s2, m1s, ptr_l, ptr_r, i, j); }
+
+				BRUTEFORCE256_32_8x8_STEP(m1s, l1, l2, l3, l4, l5, l6, l7, l8, r2, r3, r4, r5, r6, r7, r8, r1);
+				m1s1 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s +  0)), zero));
+				m1s2 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s + 32)), zero));
+				// TODO from here on not correct rotation not included.
+				if (m1s1 != 0) { bruteforce_avx2_256_32_8x8_helper< 0>(m1s1, m1s, ptr_l, ptr_r, i, j); }
+				if (m1s2 != 0) { bruteforce_avx2_256_32_8x8_helper<32>(m1s2, m1s, ptr_l, ptr_r, i, j); }
+
+				BRUTEFORCE256_32_8x8_STEP(m1s, l1, l2, l3, l4, l5, l6, l7, l8, r3, r4, r5, r6, r7, r8, r1, r2);
+				m1s1 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s +  0)), zero));
+				m1s2 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s + 32)), zero));
+				if (m1s1 != 0) { bruteforce_avx2_256_32_8x8_helper< 0>(m1s1, m1s, ptr_l, ptr_r, i, j); }
+				if (m1s2 != 0) { bruteforce_avx2_256_32_8x8_helper<32>(m1s2, m1s, ptr_l, ptr_r, i, j); }
+
+				BRUTEFORCE256_32_8x8_STEP(m1s, l1, l2, l3, l4, l5, l6, l7, l8, r4, r5, r6, r7, r8, r1, r2, r3);
+				m1s1 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s +  0)), zero));
+				m1s2 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s + 32)), zero));
+				if (m1s1 != 0) { bruteforce_avx2_256_32_8x8_helper< 0>(m1s1, m1s, ptr_l, ptr_r, i, j); }
+				if (m1s2 != 0) { bruteforce_avx2_256_32_8x8_helper<32>(m1s2, m1s, ptr_l, ptr_r, i, j); }
+
+				BRUTEFORCE256_32_8x8_STEP(m1s, l1, l2, l3, l4, l5, l6, l7, l8, r5, r6, r7, r8, r1, r2, r3, r4);
+				m1s1 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s +  0)), zero));
+				m1s2 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s + 32)), zero));
+				if (m1s1 != 0) { bruteforce_avx2_256_32_8x8_helper< 0>(m1s1, m1s, ptr_l, ptr_r, i, j); }
+				if (m1s2 != 0) { bruteforce_avx2_256_32_8x8_helper<32>(m1s2, m1s, ptr_l, ptr_r, i, j); }
+
+				BRUTEFORCE256_32_8x8_STEP(m1s, l1, l2, l3, l4, l5, l6, l7, l8, r6, r7, r8, r1, r2, r3, r4, r5);
+				m1s1 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s +  0)), zero));
+				m1s2 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s + 32)), zero));
+				if (m1s1 != 0) { bruteforce_avx2_256_32_8x8_helper< 0>(m1s1, m1s, ptr_l, ptr_r, i, j); }
+				if (m1s2 != 0) { bruteforce_avx2_256_32_8x8_helper<32>(m1s2, m1s, ptr_l, ptr_r, i, j); }
+
+				BRUTEFORCE256_32_8x8_STEP(m1s, l1, l2, l3, l4, l5, l6, l7, l8, r7, r8, r1, r2, r3, r4, r5, r6);
+				m1s1 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s +  0)), zero));
+				m1s2 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s + 32)), zero));
+				if (m1s1 != 0) { bruteforce_avx2_256_32_8x8_helper< 0>(m1s1, m1s, ptr_l, ptr_r, i, j); }
+				if (m1s2 != 0) { bruteforce_avx2_256_32_8x8_helper<32>(m1s2, m1s, ptr_l, ptr_r, i, j); }
+
+				BRUTEFORCE256_32_8x8_STEP(m1s, l1, l2, l3, l4, l5, l6, l7, l8, r8, r1, r2, r3, r4, r5, r6, r7);
+				m1s1 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s +  0)), zero));
+				m1s2 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s + 32)), zero));
+				if (m1s1 != 0) { bruteforce_avx2_256_32_8x8_helper< 0>(m1s1, m1s, ptr_l, ptr_r, i, j); }
+				if (m1s2 != 0) { bruteforce_avx2_256_32_8x8_helper<32>(m1s2, m1s, ptr_l, ptr_r, i, j); }
 			}
 		}
 	}
@@ -1888,7 +1906,7 @@ public:
 			const __m256i tmp_pop = popcount_avx2_64(tmp);
 	
 			const __m256i gt_mask = _mm256_cmpgt_epi64(mask, tmp_pop);
-			const int wt = _mm256_movemask_pd((__m256d) gt_mask);
+			const int wt = _mm256_movemask_pd((__m256) gt_mask);
 
 			// now `wt` contains the incises of matches. Meaning if bit 1 in `wt` is set (and bit 0 not),
 			// we need to swap the second (0 indexed) uint64_t from L + ctr with the first element from L + i.
@@ -1990,7 +2008,7 @@ public:
 
 	/// simple test function
 	bool run() {
-		return 0;
+		return 1;
 		//Element *ptr = (Element *) malloc(10 * sizeof(T) * ELEMENT_NR_LIMBS);
 		//for (int i = 0; i < 2; ++i) {
 		//	ptr[i][0] = i;
@@ -2019,8 +2037,8 @@ public:
 		//bruteforce_avx2_256(LIST_SIZE, LIST_SIZE);
 		//bruteforce_avx2_256_ux4<8>(LIST_SIZE, LIST_SIZE);
 		//bruteforce_avx2_256_32_ux8<2>(LIST_SIZE, LIST_SIZE);
-		//bruteforce_avx2_256_32_8x8(LIST_SIZE, LIST_SIZE);
-		bruteforce_avx2_256_64_4x4(LIST_SIZE, LIST_SIZE);
+		bruteforce_avx2_256_32_8x8(LIST_SIZE, LIST_SIZE);
+
 		//avx2_nn64_on32<r>(LIST_SIZE, LIST_SIZE);
 		//avx2_nn<r>(LIST_SIZE, LIST_SIZE);
 		bool correct = all_solutions_correct();
@@ -2096,15 +2114,9 @@ public:
 		ret += solutions_nr;
 		solutions_nr = 0;
 
-		//t = clock();
-		//bruteforce_avx2_256_32_8x8(LIST_SIZE, LIST_SIZE);
-		//std::cout << "bruteforce_avx2_256_32_8x8: " << double(clock() - t)/CLOCKS_PER_SEC << "\n";
-		//ret += solutions_nr;
-		//solutions_nr = 0;
-
 		t = clock();
 		bruteforce_avx2_256_32_8x8(LIST_SIZE, LIST_SIZE);
-		std::cout << "bruteforce_avx2_256_64_4x4: " << double(clock() - t)/CLOCKS_PER_SEC << "\n";
+		std::cout << "bruteforce_avx2_256_32_8x8: " << double(clock() - t)/CLOCKS_PER_SEC << "\n";
 		ret += solutions_nr;
 		solutions_nr = 0;
 

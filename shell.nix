@@ -13,6 +13,7 @@ stdenv.mkDerivation {
 	cmake 
 	clang 
 	ripgrep
+	ninja
   ];
 
   # buildPhase = "c++ -o main main.cpp -lPocoFoundation -lboost_system";
