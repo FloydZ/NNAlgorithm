@@ -115,8 +115,8 @@ def compute_time(n, lam, w, r, N, d):
     return theta*n
 
 n = 256
-lam = 1 << 20
-w = 23
+lam = 1 << 16
+w = 14
 r, N, d, k = compute_optimal_params(n, lam, w)
 print("r", r, "N", N, "d", d)
 
