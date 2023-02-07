@@ -7,7 +7,7 @@
 #include <array>
 #include <cassert>
 #include <iostream>
-#include "immintrin.h"
+#include <immintrin.h>
 
 #include "random.h"
 
@@ -80,7 +80,7 @@ public:
 	stack[36] = (uint8_t)compare_256_32(a5, b5); \
 	stack[37] = (uint8_t)compare_256_32(a5, b6); \
 	stack[38] = (uint8_t)compare_256_32(a5, b7); \
-	stack[39] = (uint8_t)compare_256_32(a6, b8); \
+	stack[39] = (uint8_t)compare_256_32(a5, b8); \
 	stack[40] = (uint8_t)compare_256_32(a6, b1); \
 	stack[41] = (uint8_t)compare_256_32(a6, b2); \
 	stack[42] = (uint8_t)compare_256_32(a6, b3); \
@@ -96,7 +96,7 @@ public:
 	stack[52] = (uint8_t)compare_256_32(a7, b5); \
 	stack[53] = (uint8_t)compare_256_32(a7, b6); \
 	stack[54] = (uint8_t)compare_256_32(a7, b7); \
-	stack[55] = (uint8_t)compare_256_32(a8, b8); \
+	stack[55] = (uint8_t)compare_256_32(a7, b8); \
 	stack[56] = (uint8_t)compare_256_32(a8, b1); \
 	stack[57] = (uint8_t)compare_256_32(a8, b2); \
 	stack[58] = (uint8_t)compare_256_32(a8, b3); \
@@ -104,7 +104,7 @@ public:
 	stack[60] = (uint8_t)compare_256_32(a8, b5); \
 	stack[61] = (uint8_t)compare_256_32(a8, b6); \
 	stack[62] = (uint8_t)compare_256_32(a8, b7); \
-	stack[63] = (uint8_t)compare_256_32(a8, b4)
+	stack[63] = (uint8_t)compare_256_32(a8, b8)
 
 
 
@@ -337,8 +337,8 @@ public:
 		generate_random_lists(L2);
 
 		// generate solution:
-		solution_l = fastrandombytes_uint64() % LIST_SIZE;
-		solution_r = fastrandombytes_uint64() % LIST_SIZE;
+		solution_l = 80;//fastrandombytes_uint64() % LIST_SIZE;
+		solution_r = 100;//fastrandombytes_uint64() % LIST_SIZE;
 		//std::cout << "sols at: " << solution_l << " " << solution_r << "\n";
 
 		if constexpr (EXACT) {
@@ -550,7 +550,9 @@ public:
 	//	return _mm256_and_si256(_mm256_add_epi8(pop1, pop2), low_mask);
 	//}
 
-	const __m256i lookup = _mm256_setr_epi8(
+	alignas(32) const __m256i avx_weight32 = _mm256_set1_epi32(d+1);
+	alignas(32) const __m256i avx_weight64 = _mm256_set1_epi64x(d+1);
+	alignas(32) const __m256i lookup = _mm256_setr_epi8(
 			/* 0 */ 0, /* 1 */ 1, /* 2 */ 1, /* 3 */ 2,
 			/* 4 */ 1, /* 5 */ 2, /* 6 */ 2, /* 7 */ 3,
 			/* 8 */ 1, /* 9 */ 2, /* a */ 2, /* b */ 3,
@@ -560,40 +562,28 @@ public:
 			/* 8 */ 1, /* 9 */ 2, /* a */ 2, /* b */ 3,
 			/* c */ 2, /* d */ 3, /* e */ 3, /* f */ 4
 	);
-	/// special popcount, which popcounts on 8 * 32u bit limbs in parallel
-	inline __m256i popcount_avx2_32(const __m256i vec) noexcept {
 
+	__m256i popcount_avx2_32(const __m256i vec) noexcept {
 		const __m256i low_mask = _mm256_set1_epi8(0x0f);
-	    const __m256i lo  = _mm256_and_si256(vec, low_mask);
-	    const __m256i hi  = _mm256_and_si256(_mm256_srli_epi16(vec, 4), low_mask);
-	    const __m256i popcnt1 = _mm256_shuffle_epi8(lookup, lo);
-	    const __m256i popcnt2 = _mm256_shuffle_epi8(lookup, hi);
-	    __m256i local = _mm256_setzero_si256();
-	    local = _mm256_add_epi8(local, popcnt1);
-	    local = _mm256_add_epi8(local, popcnt2);
-	
+		const __m256i lo  = _mm256_and_si256(vec, low_mask);
+		const __m256i hi  = _mm256_and_si256(_mm256_srli_epi16(vec, 4), low_mask);
+		const __m256i popcnt1 = _mm256_shuffle_epi8(lookup, lo);
+		const __m256i popcnt2 = _mm256_shuffle_epi8(lookup, hi);
+		__m256i local = _mm256_setzero_si256();
+		local = _mm256_add_epi8(local, popcnt1);
+		local = _mm256_add_epi8(local, popcnt2);
+
 		// not the best
 		const __m256i mask = _mm256_set1_epi32(0xff);
 		__m256i ret = _mm256_and_si256(local, mask);
-		ret = _mm256_add_epi8(ret, _mm256_and_si256(_mm256_srli_epi16(local,  8), mask));
+		ret = _mm256_add_epi8(ret, _mm256_and_si256(_mm256_srli_epi32(local,  8), mask));
 		ret = _mm256_add_epi8(ret, _mm256_and_si256(_mm256_srli_epi32(local, 16), mask));
-		//ret = _mm256_add_epi8(ret, _mm256_and_si256(_mm256_srli_epi32(local, 24), mask));
+		ret = _mm256_add_epi8(ret, _mm256_and_si256(_mm256_srli_epi32(local, 24), mask));
 		return ret;
 	}
 	
 	/// special popcount which popcounts on 4 * 64 bit limbs in parallel
-	inline static __m256i popcount_avx2_64(const __m256i vec) noexcept {
-		const __m256i lookup = _mm256_setr_epi8(
-		    /* 0 */ 0, /* 1 */ 1, /* 2 */ 1, /* 3 */ 2,
-		    /* 4 */ 1, /* 5 */ 2, /* 6 */ 2, /* 7 */ 3,
-		    /* 8 */ 1, /* 9 */ 2, /* a */ 2, /* b */ 3,
-		    /* c */ 2, /* d */ 3, /* e */ 3, /* f */ 4,
-		    /* 0 */ 0, /* 1 */ 1, /* 2 */ 1, /* 3 */ 2,
-		    /* 4 */ 1, /* 5 */ 2, /* 6 */ 2, /* 7 */ 3,
-		    /* 8 */ 1, /* 9 */ 2, /* a */ 2, /* b */ 3,
-		    /* c */ 2, /* d */ 3, /* e */ 3, /* f */ 4
-		);
-	
+	__m256i popcount_avx2_64(const __m256i vec) noexcept {
 		const __m256i low_mask = _mm256_set1_epi8(0x0f);
 	    const __m256i lo  = _mm256_and_si256(vec, low_mask);
 	    const __m256i hi  = _mm256_and_si256(_mm256_srli_epi16(vec, 4), low_mask);
@@ -611,6 +601,17 @@ public:
 		ret = _mm256_add_epi8(ret, _mm256_srli_epi64(ret,  32));
 		ret = _mm256_and_si256(ret, mask2);
 		return ret;
+	}
+
+	__m256i popcount_avx2_64_(const __m256i v) noexcept {
+		const __m256i m1 = _mm256_set1_epi8(0x55);
+		const __m256i m2 = _mm256_set1_epi8(0x33);
+		const __m256i m4 = _mm256_set1_epi8(0x0F);
+		
+		const __m256i t1 = _mm256_sub_epi8(v,       (_mm256_srli_epi16(v,  1) & m1));
+		const __m256i t2 = _mm256_add_epi8(t1 & m2, (_mm256_srli_epi16(t1, 2) & m2));
+		const __m256i t3 = _mm256_add_epi8(t2, _mm256_srli_epi16(t2, 4)) & m4;
+		return _mm256_sad_epu8(t3, _mm256_setzero_si256());
 	}
 
 	// adds `li` and `lr` to the solutions list.
@@ -694,16 +695,15 @@ public:
 	/// NOTE: upper bound `d` is inclusive
 	/// \param in
 	/// \return
-	inline int compare_256_32(const __m256i in1, const __m256i in2) {
+	int compare_256_32(const __m256i in1, const __m256i in2) {
 		if constexpr(EXACT) {
 			const __m256i tmp2 = _mm256_cmpeq_epi32(in1, in2);
 			return _mm256_movemask_ps((__m256) tmp2);
 		} else {
-			const static __m256i weight = _mm256_set1_epi32(d+1);
 
 			const __m256i tmp1 = _mm256_xor_si256(in1, in2);
 			const __m256i pop = popcount_avx2_32(tmp1);
-			const __m256i tmp2 = _mm256_cmpgt_epi32(weight, pop);
+			const __m256i tmp2 = _mm256_cmpgt_epi32(avx_weight32, pop);
 			return _mm256_movemask_ps((__m256) tmp2);
 		}
 	}
@@ -712,16 +712,14 @@ public:
 	/// NOTE: upper bound `d` is inclusive
 	/// \param in
 	/// \return
-	inline int compare_256_64(const __m256i in1, const __m256i in2) {
+	int compare_256_64(const __m256i in1, const __m256i in2) {
 		if constexpr(EXACT) {
 			const __m256i tmp2 = _mm256_cmpeq_epi64(in1, in2);
 			return _mm256_movemask_pd((__m256d) tmp2);
 		} else {
-			const static __m256i weight = _mm256_set1_epi64x(d+1);
-
 			const __m256i tmp1 = _mm256_xor_si256(in1, in2);
 			const __m256i pop = popcount_avx2_64(tmp1);
-			const __m256i tmp2 = _mm256_cmpgt_epi64(weight, pop);
+			const __m256i tmp2 = _mm256_cmpgt_epi64(avx_weight64, pop);
 			return _mm256_movemask_pd((__m256d) tmp2);
 		}
 	}
@@ -1502,12 +1500,15 @@ public:
 		}
 	}
 
-	template<const uint32_t off>
+	template<const uint32_t off, const uint32_t rotation>
 	void bruteforce_avx2_256_32_8x8_helper(uint32_t m1sx,
 	                                       const uint8_t *m1s,
 	                                       const uint32_t *ptr_l,
 	                                       const uint32_t *ptr_r,
 	                                       const size_t i, const size_t j) noexcept {
+		static_assert(rotation < 8);
+		static_assert(off%32 == 0);
+
 		while (m1sx > 0) {
 			const uint32_t ctz = off + __builtin_ctz(m1sx);
 			const uint32_t m1sc = m1s[ctz];
@@ -1516,19 +1517,16 @@ public:
 			const uint32_t test_j = ctz % 8;
 			const uint32_t test_i = ctz / 8;
 
-			// TODO wahrscheinlich auch nicht richtig
-			const uint32_t off_l = test_i * 8 + m1sc_ctz + 0;
-			const uint32_t off_r = test_j * 8 + m1sc_ctz + 0;
+			const uint32_t off_l = test_i * 8 + m1sc_ctz;
+			const uint32_t off_r = test_j * 8 + m1sc_ctz - rotation;
 
-			const uint64_t *test_tl = (uint64_t *) (ptr_l + off_l);
-			const uint64_t *test_tr = (uint64_t *) (ptr_r + off_r);
+			const uint64_t *test_tl = (uint64_t *) (ptr_l + off_l*8);
+			const uint64_t *test_tr = (uint64_t *) (ptr_r + off_r*8);
 			if (compare_u64_ptr(test_tl, test_tr)) {
 				found_solution(i + off_l, j + off_r);
 			}
 
-			// TODO also not correct
-			m1sx = 0;
-			//m1sx ^= 1u << ctz;
+			m1sx ^= 1u << ctz;
 		}
 	}
 
@@ -1542,10 +1540,14 @@ public:
 		ASSERT(e1 >= s1);
 		ASSERT(e2 >= s2);
 
+		ASSERT(e1 >= 64);
+		ASSERT(e2 >= 64);
+
 		uint32_t *ptr_l = (uint32_t *)L1;
 
 		/// difference of the memory location in the right list
 		const __m256i loadr1 = _mm256_setr_epi32(0, 8, 16, 24, 32, 40, 48, 56);
+		const __m256i shuffl = _mm256_setr_epi32(7, 0, 1, 2, 3, 4, 5, 6);
 
 		alignas(32) uint8_t m1s[64];
 
@@ -1564,63 +1566,126 @@ public:
 
 			uint32_t *ptr_r = (uint32_t *)L2;
 			for (size_t j = s1; j < s2 + e2; j += 64, ptr_r += 512) {
-				const __m256i r1 = _mm256_i32gather_epi32(ptr_r +   0, loadr1, 4);
-				const __m256i r2 = _mm256_i32gather_epi32(ptr_r +  64, loadr1, 4);
-				const __m256i r3 = _mm256_i32gather_epi32(ptr_r + 128, loadr1, 4);
-				const __m256i r4 = _mm256_i32gather_epi32(ptr_r + 192, loadr1, 4);
-				const __m256i r5 = _mm256_i32gather_epi32(ptr_r + 256, loadr1, 4);
-				const __m256i r6 = _mm256_i32gather_epi32(ptr_r + 320, loadr1, 4);
-				const __m256i r7 = _mm256_i32gather_epi32(ptr_r + 384, loadr1, 4);
-				const __m256i r8 = _mm256_i32gather_epi32(ptr_r + 448, loadr1, 4);
+				__m256i r1 = _mm256_i32gather_epi32(ptr_r +   0, loadr1, 4);
+				__m256i r2 = _mm256_i32gather_epi32(ptr_r +  64, loadr1, 4);
+				__m256i r3 = _mm256_i32gather_epi32(ptr_r + 128, loadr1, 4);
+				__m256i r4 = _mm256_i32gather_epi32(ptr_r + 192, loadr1, 4);
+				__m256i r5 = _mm256_i32gather_epi32(ptr_r + 256, loadr1, 4);
+				__m256i r6 = _mm256_i32gather_epi32(ptr_r + 320, loadr1, 4);
+				__m256i r7 = _mm256_i32gather_epi32(ptr_r + 384, loadr1, 4);
+				__m256i r8 = _mm256_i32gather_epi32(ptr_r + 448, loadr1, 4);
 
 				BRUTEFORCE256_32_8x8_STEP(m1s, l1, l2, l3, l4, l5, l6, l7, l8, r1, r2, r3, r4, r5, r6, r7, r8);
-				uint32_t m1s1 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s +  0)), zero));
-				uint32_t m1s2 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s + 32)), zero));
-				if (m1s1 != 0) { bruteforce_avx2_256_32_8x8_helper< 0>(m1s1, m1s, ptr_l, ptr_r, i, j); }
-				if (m1s2 != 0) { bruteforce_avx2_256_32_8x8_helper<32>(m1s2, m1s, ptr_l, ptr_r, i, j); }
+				uint32_t m1s1 = _mm256_movemask_epi8(~(_mm256_cmpeq_epi8(LOAD256((__m256i *)(m1s +  0)), zero)));
+				uint32_t m1s2 = _mm256_movemask_epi8(~(_mm256_cmpeq_epi8(LOAD256((__m256i *)(m1s + 32)), zero)));
+				if (m1s1 != 0) { bruteforce_avx2_256_32_8x8_helper< 0, 0>(m1s1, m1s, ptr_l, ptr_r, i, j); }
+				if (m1s2 != 0) { bruteforce_avx2_256_32_8x8_helper<32, 0>(m1s2, m1s, ptr_l, ptr_r, i, j); }
 
-				BRUTEFORCE256_32_8x8_STEP(m1s, l1, l2, l3, l4, l5, l6, l7, l8, r2, r3, r4, r5, r6, r7, r8, r1);
-				m1s1 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s +  0)), zero));
-				m1s2 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s + 32)), zero));
-				// TODO from here on not correct rotation not included.
-				if (m1s1 != 0) { bruteforce_avx2_256_32_8x8_helper< 0>(m1s1, m1s, ptr_l, ptr_r, i, j); }
-				if (m1s2 != 0) { bruteforce_avx2_256_32_8x8_helper<32>(m1s2, m1s, ptr_l, ptr_r, i, j); }
 
-				BRUTEFORCE256_32_8x8_STEP(m1s, l1, l2, l3, l4, l5, l6, l7, l8, r3, r4, r5, r6, r7, r8, r1, r2);
-				m1s1 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s +  0)), zero));
-				m1s2 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s + 32)), zero));
-				if (m1s1 != 0) { bruteforce_avx2_256_32_8x8_helper< 0>(m1s1, m1s, ptr_l, ptr_r, i, j); }
-				if (m1s2 != 0) { bruteforce_avx2_256_32_8x8_helper<32>(m1s2, m1s, ptr_l, ptr_r, i, j); }
+				r1 = _mm256_permutevar8x32_epi32(r1, shuffl);
+				r2 = _mm256_permutevar8x32_epi32(r2, shuffl);
+				r3 = _mm256_permutevar8x32_epi32(r3, shuffl);
+				r4 = _mm256_permutevar8x32_epi32(r4, shuffl);
+				r5 = _mm256_permutevar8x32_epi32(r5, shuffl);
+				r6 = _mm256_permutevar8x32_epi32(r6, shuffl);
+				r7 = _mm256_permutevar8x32_epi32(r7, shuffl);
+				r8 = _mm256_permutevar8x32_epi32(r8, shuffl);
 
-				BRUTEFORCE256_32_8x8_STEP(m1s, l1, l2, l3, l4, l5, l6, l7, l8, r4, r5, r6, r7, r8, r1, r2, r3);
-				m1s1 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s +  0)), zero));
-				m1s2 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s + 32)), zero));
-				if (m1s1 != 0) { bruteforce_avx2_256_32_8x8_helper< 0>(m1s1, m1s, ptr_l, ptr_r, i, j); }
-				if (m1s2 != 0) { bruteforce_avx2_256_32_8x8_helper<32>(m1s2, m1s, ptr_l, ptr_r, i, j); }
+				BRUTEFORCE256_32_8x8_STEP(m1s, l1, l2, l3, l4, l5, l6, l7, l8, r1, r2, r3, r4, r5, r6, r7, r8);
+				m1s1 = _mm256_movemask_epi8(~_mm256_cmpeq_epi8(LOAD256((__m256i *)(m1s +  0)), zero));
+				m1s2 = _mm256_movemask_epi8(~_mm256_cmpeq_epi8(LOAD256((__m256i *)(m1s + 32)), zero));
+				if (m1s1 != 0) { bruteforce_avx2_256_32_8x8_helper< 0, 1>(m1s1, m1s, ptr_l, ptr_r, i, j); }
+				if (m1s2 != 0) { bruteforce_avx2_256_32_8x8_helper<32, 1>(m1s2, m1s, ptr_l, ptr_r, i, j); }
 
-				BRUTEFORCE256_32_8x8_STEP(m1s, l1, l2, l3, l4, l5, l6, l7, l8, r5, r6, r7, r8, r1, r2, r3, r4);
-				m1s1 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s +  0)), zero));
-				m1s2 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s + 32)), zero));
-				if (m1s1 != 0) { bruteforce_avx2_256_32_8x8_helper< 0>(m1s1, m1s, ptr_l, ptr_r, i, j); }
-				if (m1s2 != 0) { bruteforce_avx2_256_32_8x8_helper<32>(m1s2, m1s, ptr_l, ptr_r, i, j); }
+				r1 = _mm256_permutevar8x32_epi32(r1, shuffl);
+				r2 = _mm256_permutevar8x32_epi32(r2, shuffl);
+				r3 = _mm256_permutevar8x32_epi32(r3, shuffl);
+				r4 = _mm256_permutevar8x32_epi32(r4, shuffl);
+				r5 = _mm256_permutevar8x32_epi32(r5, shuffl);
+				r6 = _mm256_permutevar8x32_epi32(r6, shuffl);
+				r7 = _mm256_permutevar8x32_epi32(r7, shuffl);
+				r8 = _mm256_permutevar8x32_epi32(r8, shuffl);
 
-				BRUTEFORCE256_32_8x8_STEP(m1s, l1, l2, l3, l4, l5, l6, l7, l8, r6, r7, r8, r1, r2, r3, r4, r5);
-				m1s1 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s +  0)), zero));
-				m1s2 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s + 32)), zero));
-				if (m1s1 != 0) { bruteforce_avx2_256_32_8x8_helper< 0>(m1s1, m1s, ptr_l, ptr_r, i, j); }
-				if (m1s2 != 0) { bruteforce_avx2_256_32_8x8_helper<32>(m1s2, m1s, ptr_l, ptr_r, i, j); }
+				BRUTEFORCE256_32_8x8_STEP(m1s, l1, l2, l3, l4, l5, l6, l7, l8, r1, r2, r3, r4, r5, r6, r7, r8);
+				m1s1 = _mm256_movemask_epi8(~_mm256_cmpeq_epi8(LOAD256((__m256i *)(m1s +  0)), zero));
+				m1s2 = _mm256_movemask_epi8(~_mm256_cmpeq_epi8(LOAD256((__m256i *)(m1s + 32)), zero));
+				if (m1s1 != 0) { bruteforce_avx2_256_32_8x8_helper< 0, 2>(m1s1, m1s, ptr_l, ptr_r, i, j); }
+				if (m1s2 != 0) { bruteforce_avx2_256_32_8x8_helper<32, 2>(m1s2, m1s, ptr_l, ptr_r, i, j); }
 
-				BRUTEFORCE256_32_8x8_STEP(m1s, l1, l2, l3, l4, l5, l6, l7, l8, r7, r8, r1, r2, r3, r4, r5, r6);
-				m1s1 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s +  0)), zero));
-				m1s2 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s + 32)), zero));
-				if (m1s1 != 0) { bruteforce_avx2_256_32_8x8_helper< 0>(m1s1, m1s, ptr_l, ptr_r, i, j); }
-				if (m1s2 != 0) { bruteforce_avx2_256_32_8x8_helper<32>(m1s2, m1s, ptr_l, ptr_r, i, j); }
+				r1 = _mm256_permutevar8x32_epi32(r1, shuffl);
+				r2 = _mm256_permutevar8x32_epi32(r2, shuffl);
+				r3 = _mm256_permutevar8x32_epi32(r3, shuffl);
+				r4 = _mm256_permutevar8x32_epi32(r4, shuffl);
+				r5 = _mm256_permutevar8x32_epi32(r5, shuffl);
+				r6 = _mm256_permutevar8x32_epi32(r6, shuffl);
+				r7 = _mm256_permutevar8x32_epi32(r7, shuffl);
+				r8 = _mm256_permutevar8x32_epi32(r8, shuffl);
 
-				BRUTEFORCE256_32_8x8_STEP(m1s, l1, l2, l3, l4, l5, l6, l7, l8, r8, r1, r2, r3, r4, r5, r6, r7);
-				m1s1 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s +  0)), zero));
-				m1s2 = _mm256_movemask_epi8(_mm256_cmpgt_epi8(LOAD256((__m256i *)(m1s + 32)), zero));
-				if (m1s1 != 0) { bruteforce_avx2_256_32_8x8_helper< 0>(m1s1, m1s, ptr_l, ptr_r, i, j); }
-				if (m1s2 != 0) { bruteforce_avx2_256_32_8x8_helper<32>(m1s2, m1s, ptr_l, ptr_r, i, j); }
+				BRUTEFORCE256_32_8x8_STEP(m1s, l1, l2, l3, l4, l5, l6, l7, l8, r1, r2, r3, r4, r5, r6, r7, r8);
+				m1s1 = _mm256_movemask_epi8(~_mm256_cmpeq_epi8(LOAD256((__m256i *)(m1s +  0)), zero));
+				m1s2 = _mm256_movemask_epi8(~_mm256_cmpeq_epi8(LOAD256((__m256i *)(m1s + 32)), zero));
+				if (m1s1 != 0) { bruteforce_avx2_256_32_8x8_helper< 0, 3>(m1s1, m1s, ptr_l, ptr_r, i, j); }
+				if (m1s2 != 0) { bruteforce_avx2_256_32_8x8_helper<32, 3>(m1s2, m1s, ptr_l, ptr_r, i, j); }
+
+				r1 = _mm256_permutevar8x32_epi32(r1, shuffl);
+				r2 = _mm256_permutevar8x32_epi32(r2, shuffl);
+				r3 = _mm256_permutevar8x32_epi32(r3, shuffl);
+				r4 = _mm256_permutevar8x32_epi32(r4, shuffl);
+				r5 = _mm256_permutevar8x32_epi32(r5, shuffl);
+				r6 = _mm256_permutevar8x32_epi32(r6, shuffl);
+				r7 = _mm256_permutevar8x32_epi32(r7, shuffl);
+				r8 = _mm256_permutevar8x32_epi32(r8, shuffl);
+
+				BRUTEFORCE256_32_8x8_STEP(m1s, l1, l2, l3, l4, l5, l6, l7, l8, r1, r2, r3, r4, r5, r6, r7, r8);
+				m1s1 = _mm256_movemask_epi8(~_mm256_cmpeq_epi8(LOAD256((__m256i *)(m1s +  0)), zero));
+				m1s2 = _mm256_movemask_epi8(~_mm256_cmpeq_epi8(LOAD256((__m256i *)(m1s + 32)), zero));
+				if (m1s1 != 0) { bruteforce_avx2_256_32_8x8_helper< 0, 4>(m1s1, m1s, ptr_l, ptr_r, i, j); }
+				if (m1s2 != 0) { bruteforce_avx2_256_32_8x8_helper<32, 4>(m1s2, m1s, ptr_l, ptr_r, i, j); }
+
+				r1 = _mm256_permutevar8x32_epi32(r1, shuffl);
+				r2 = _mm256_permutevar8x32_epi32(r2, shuffl);
+				r3 = _mm256_permutevar8x32_epi32(r3, shuffl);
+				r4 = _mm256_permutevar8x32_epi32(r4, shuffl);
+				r5 = _mm256_permutevar8x32_epi32(r5, shuffl);
+				r6 = _mm256_permutevar8x32_epi32(r6, shuffl);
+				r7 = _mm256_permutevar8x32_epi32(r7, shuffl);
+				r8 = _mm256_permutevar8x32_epi32(r8, shuffl);
+
+				BRUTEFORCE256_32_8x8_STEP(m1s, l1, l2, l3, l4, l5, l6, l7, l8, r1, r2, r3, r4, r5, r6, r7, r8);
+				m1s1 = _mm256_movemask_epi8(~_mm256_cmpeq_epi8(LOAD256((__m256i *)(m1s +  0)), zero));
+				m1s2 = _mm256_movemask_epi8(~_mm256_cmpeq_epi8(LOAD256((__m256i *)(m1s + 32)), zero));
+				if (m1s1 != 0) { bruteforce_avx2_256_32_8x8_helper< 0, 5>(m1s1, m1s, ptr_l, ptr_r, i, j); }
+				if (m1s2 != 0) { bruteforce_avx2_256_32_8x8_helper<32, 5>(m1s2, m1s, ptr_l, ptr_r, i, j); }
+
+				r1 = _mm256_permutevar8x32_epi32(r1, shuffl);
+				r2 = _mm256_permutevar8x32_epi32(r2, shuffl);
+				r3 = _mm256_permutevar8x32_epi32(r3, shuffl);
+				r4 = _mm256_permutevar8x32_epi32(r4, shuffl);
+				r5 = _mm256_permutevar8x32_epi32(r5, shuffl);
+				r6 = _mm256_permutevar8x32_epi32(r6, shuffl);
+				r7 = _mm256_permutevar8x32_epi32(r7, shuffl);
+				r8 = _mm256_permutevar8x32_epi32(r8, shuffl);
+
+				BRUTEFORCE256_32_8x8_STEP(m1s, l1, l2, l3, l4, l5, l6, l7, l8, r1, r2, r3, r4, r5, r6, r7, r8);
+				m1s1 = _mm256_movemask_epi8(~_mm256_cmpeq_epi8(LOAD256((__m256i *)(m1s +  0)), zero));
+				m1s2 = _mm256_movemask_epi8(~_mm256_cmpeq_epi8(LOAD256((__m256i *)(m1s + 32)), zero));
+				if (m1s1 != 0) { bruteforce_avx2_256_32_8x8_helper< 0, 6>(m1s1, m1s, ptr_l, ptr_r, i, j); }
+				if (m1s2 != 0) { bruteforce_avx2_256_32_8x8_helper<32, 6>(m1s2, m1s, ptr_l, ptr_r, i, j); }
+
+				r1 = _mm256_permutevar8x32_epi32(r1, shuffl);
+				r2 = _mm256_permutevar8x32_epi32(r2, shuffl);
+				r3 = _mm256_permutevar8x32_epi32(r3, shuffl);
+				r4 = _mm256_permutevar8x32_epi32(r4, shuffl);
+				r5 = _mm256_permutevar8x32_epi32(r5, shuffl);
+				r6 = _mm256_permutevar8x32_epi32(r6, shuffl);
+				r7 = _mm256_permutevar8x32_epi32(r7, shuffl);
+				r8 = _mm256_permutevar8x32_epi32(r8, shuffl);
+
+				BRUTEFORCE256_32_8x8_STEP(m1s, l1, l2, l3, l4, l5, l6, l7, l8, r1, r2, r3, r4, r5, r6, r7, r8);
+				m1s1 = _mm256_movemask_epi8(~_mm256_cmpeq_epi8(LOAD256((__m256i *)(m1s +  0)), zero));
+				m1s2 = _mm256_movemask_epi8(~_mm256_cmpeq_epi8(LOAD256((__m256i *)(m1s + 32)), zero));
+				if (m1s1 != 0) { bruteforce_avx2_256_32_8x8_helper< 0, 7>(m1s1, m1s, ptr_l, ptr_r, i, j); }
+				if (m1s2 != 0) { bruteforce_avx2_256_32_8x8_helper<32, 7>(m1s2, m1s, ptr_l, ptr_r, i, j); }
 			}
 		}
 	}
@@ -1634,13 +1699,11 @@ public:
 		while (m1sx > 0) {
 			const uint32_t ctz = off + __builtin_ctz(m1sx);
 			const uint32_t m1sc = m1s[ctz];
-			const uint32_t m1sc_ctz = __builtin_ctz(m1sc);
 
 			const uint32_t test_j = ctz % 4;
 			const uint32_t test_inner_j = ctz / 16;
 			const uint32_t test_i = (ctz % 16)/4;
 
-			// TODO wahrscheinlich auch nicht richtig
 			const uint32_t off_l = test_i * 4;
 			const uint32_t off_r = test_j * 4 + test_inner_j;
 
@@ -1664,10 +1727,11 @@ public:
 		ASSERT(e1 >= s1);
 		ASSERT(e2 >= s2);
 
+		/// NOTE is already aligned
 		T *ptr_l = (T *)L1;
 
 		/// difference of the memory location in the right list
-		const __m128i loadr1 = {       (4ull << 32u), ( 8ul) | (12ull << 32u)};
+		alignas(32) const __m128i loadr1 = {       (4ull << 32u), ( 8ul) | (12ull << 32u)};
 
 		alignas(32) uint8_t m1s[64];
 
@@ -1681,6 +1745,8 @@ public:
 			const __m256i l4 = _mm256_i32gather_epi64(ptr_l + 48, loadr1, 8);
 
 			T *ptr_r = (T *)L2;
+
+			#pragma unroll 4
 			for (size_t j = s1; j < s2 + e2; j += 16, ptr_r += 64) {
 				__m256i r1 = _mm256_i32gather_epi64(ptr_r +  0, loadr1, 8);
 				__m256i r2 = _mm256_i32gather_epi64(ptr_r + 16, loadr1, 8);
@@ -1695,6 +1761,7 @@ public:
 			}
 		}
 	}
+
 	/// bruteforce the two lists between the given start and end indices.
 	/// NOTE: uses avx2
 	/// NOTE: only in limb comparison possible. inter limb (e.g. bit 43...83) is impossible.
@@ -1990,7 +2057,7 @@ public:
 
 	/// simple test function
 	bool run() {
-		return 0;
+		return 1;
 		//Element *ptr = (Element *) malloc(10 * sizeof(T) * ELEMENT_NR_LIMBS);
 		//for (int i = 0; i < 2; ++i) {
 		//	ptr[i][0] = i;
@@ -2019,8 +2086,8 @@ public:
 		//bruteforce_avx2_256(LIST_SIZE, LIST_SIZE);
 		//bruteforce_avx2_256_ux4<8>(LIST_SIZE, LIST_SIZE);
 		//bruteforce_avx2_256_32_ux8<2>(LIST_SIZE, LIST_SIZE);
-		//bruteforce_avx2_256_32_8x8(LIST_SIZE, LIST_SIZE);
-		bruteforce_avx2_256_64_4x4(LIST_SIZE, LIST_SIZE);
+		bruteforce_avx2_256_32_8x8(LIST_SIZE, LIST_SIZE);
+		//bruteforce_avx2_256_64_4x4(LIST_SIZE, LIST_SIZE);
 		//avx2_nn64_on32<r>(LIST_SIZE, LIST_SIZE);
 		//avx2_nn<r>(LIST_SIZE, LIST_SIZE);
 		bool correct = all_solutions_correct();
@@ -2102,11 +2169,11 @@ public:
 		//ret += solutions_nr;
 		//solutions_nr = 0;
 
-		t = clock();
-		bruteforce_avx2_256_32_8x8(LIST_SIZE, LIST_SIZE);
-		std::cout << "bruteforce_avx2_256_64_4x4: " << double(clock() - t)/CLOCKS_PER_SEC << "\n";
-		ret += solutions_nr;
-		solutions_nr = 0;
+		//t = clock();
+		//bruteforce_avx2_256_64_4x4(LIST_SIZE, LIST_SIZE);
+		//std::cout << "bruteforce_avx2_256_64_4x4: " << double(clock() - t)/CLOCKS_PER_SEC << "\n";
+		//ret += solutions_nr;
+		//solutions_nr = 0;
 
 		//t = clock();
 		//bruteforce_avx2_256_v2(LIST_SIZE, LIST_SIZE);
