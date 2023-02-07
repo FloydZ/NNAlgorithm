@@ -108,9 +108,10 @@ def write_config(outfile, n: int, N: int, r: int, w: int, d: int, list_size: int
 
 
 def rebuild():
-    # TODO error detection.
     p = Popen(["make", run_file, "-j1"], stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True, cwd= "../cmake-build-release")
     _ = p.stdout.read()
+    if p != 0:
+        print("Error")
     #print(t)
 
 

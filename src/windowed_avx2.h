@@ -18,6 +18,13 @@
 #define LOAD256(x) _mm256_load_si256(x)
 #endif
 
+#define STORE_ALIGNED
+#ifdef STORE_ALIGNED
+#define STORE256(ptr, x) _mm256_store_si256(ptr, x)
+#else
+#define STORE256(ptr, x) _mm256_storeu_si256(ptr, x)
+#endif
+
 #ifndef ASSERT
 #define ASSERT(x) assert(x)
 #endif
@@ -337,8 +344,8 @@ public:
 		generate_random_lists(L2);
 
 		// generate solution:
-		solution_l = 80;//fastrandombytes_uint64() % LIST_SIZE;
-		solution_r = 100;//fastrandombytes_uint64() % LIST_SIZE;
+		solution_l = 64;//fastrandombytes_uint64() % LIST_SIZE;
+		solution_r = 65;//fastrandombytes_uint64() % LIST_SIZE;
 		//std::cout << "sols at: " << solution_l << " " << solution_r << "\n";
 
 		if constexpr (EXACT) {
@@ -563,6 +570,17 @@ public:
 			/* c */ 2, /* d */ 3, /* e */ 3, /* f */ 4
 	);
 
+	alignas(32) uint32_t popcount_helper[8];
+	__m256i popcount_avx2_32_old(const __m256i vec) noexcept {
+		STORE256((__m256i *)popcount_helper, vec);	
+		
+		for (uint32_t i = 0; i < 8; i++) {
+			popcount_helper[i] = __builtin_popcount(popcount_helper[i]);
+		}
+
+		return LOAD256((__m256i *)popcount_helper);
+	}
+	
 	__m256i popcount_avx2_32(const __m256i vec) noexcept {
 		const __m256i low_mask = _mm256_set1_epi8(0x0f);
 		const __m256i lo  = _mm256_and_si256(vec, low_mask);
@@ -674,6 +692,8 @@ public:
 	}
 
 	inline bool compare_u64_ptr(const uint64_t *a, const uint64_t *b) {
+		ASSERT((T)a < (T)(L1 + LIST_SIZE));
+		ASSERT((T)b < (T)(L2 + LIST_SIZE));
 		if constexpr(EXACT) {
 			for (uint32_t i = 0; i < ELEMENT_NR_LIMBS; i++) {
 				if (a[i] != b[i])
@@ -1361,7 +1381,7 @@ public:
 		uint32_t m1s_tmp = 0;
 		const uint32_t m1s_mask = 1u << 31;
 
-		for (size_t i = s1; i < s1 + (e1+u-1); i += u) {
+		for (size_t i = s1; i < s1 + e1; i += u) {
 			/// Example u = 2
 			/// li[0] = L[0][0]
 			/// li[1] = L[1][0]
@@ -1371,7 +1391,8 @@ public:
 			for (uint32_t ui = 0; ui < u; ui++) {
 				#pragma unroll
 				for (uint32_t uii = 0; uii < 8; uii++) {
-					li[ui + uii*u] = _mm256_set1_epi32(((uint32_t *)L1[i + ui])[uii]);
+					const uint32_t tmp = ((uint32_t *)L1[i + ui])[uii];
+					li[ui + uii*u] = _mm256_set1_epi32(tmp);
 				}
 			}
 
@@ -1510,15 +1531,17 @@ public:
 		static_assert(off%32 == 0);
 
 		while (m1sx > 0) {
-			const uint32_t ctz = off + __builtin_ctz(m1sx);
+			const uint32_t ctz1 = __builtin_ctz(m1sx);
+			const uint32_t ctz = off + ctz1;
 			const uint32_t m1sc = m1s[ctz];
 			const uint32_t m1sc_ctz = __builtin_ctz(m1sc);
 
 			const uint32_t test_j = ctz % 8;
 			const uint32_t test_i = ctz / 8;
 
-			const uint32_t off_l = test_i * 8 + m1sc_ctz;
-			const uint32_t off_r = test_j * 8 + m1sc_ctz - rotation;
+			// NOTE: the signed is important
+			const int32_t off_l = test_i * 8 + m1sc_ctz;
+			const int32_t off_r = test_j * 8 + (8-rotation +m1sc_ctz)%8;
 
 			const uint64_t *test_tl = (uint64_t *) (ptr_l + off_l*8);
 			const uint64_t *test_tr = (uint64_t *) (ptr_r + off_r*8);
@@ -1526,7 +1549,7 @@ public:
 				found_solution(i + off_l, j + off_r);
 			}
 
-			m1sx ^= 1u << ctz;
+			m1sx ^= 1u << ctz1;
 		}
 	}
 
@@ -1697,7 +1720,8 @@ public:
 	                                       const uint64_t *ptr_r,
 	                                       const size_t i, const size_t j) noexcept {
 		while (m1sx > 0) {
-			const uint32_t ctz = off + __builtin_ctz(m1sx);
+			const uint32_t ctz1 = __builtin_ctz(m1sx);
+			const uint32_t ctz = off + ctz1;
 			const uint32_t m1sc = m1s[ctz];
 
 			const uint32_t test_j = ctz % 4;
@@ -1713,7 +1737,7 @@ public:
 				found_solution(i + off_l, j + off_r);
 			}
 
-			m1sx ^= 1u << ctz;
+			m1sx ^= 1u << ctz1;
 		}
 	}
 
@@ -2163,11 +2187,12 @@ public:
 		ret += solutions_nr;
 		solutions_nr = 0;
 
-		//t = clock();
-		//bruteforce_avx2_256_32_8x8(LIST_SIZE, LIST_SIZE);
-		//std::cout << "bruteforce_avx2_256_32_8x8: " << double(clock() - t)/CLOCKS_PER_SEC << "\n";
-		//ret += solutions_nr;
-		//solutions_nr = 0;
+		t = clock();
+		bruteforce_avx2_256_32_8x8(LIST_SIZE, LIST_SIZE);
+		std::cout << "bruteforce_avx2_256_32_8x8: " << double(clock() - t)/CLOCKS_PER_SEC << "\n";
+		ret += solutions_nr;
+		solutions_nr = 0;
+		return 1;
 
 		//t = clock();
 		//bruteforce_avx2_256_64_4x4(LIST_SIZE, LIST_SIZE);

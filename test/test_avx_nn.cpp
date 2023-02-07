@@ -38,7 +38,7 @@ union U256i {
 
 
 TEST(NearestNeighbor2, Windowed) {
-	constexpr static WindowedAVX2_Config config{256, 4, 50, 1u<<16, 26, 23, 0, 496};
+	constexpr static WindowedAVX2_Config config{256, 4, 50, 1u<<18, 26, 4, 0, 496};
 	WindowedAVX2<config> algo{};
 	algo.run();
 	algo.bench();
