@@ -30,15 +30,10 @@ set(MALLOC_LIBRARY "")
 
 # sadly we need '-march=native' even in 'DEBUG' mode. Because otherwise the code wouldn't compile.
 # for fsized-deallocation see: https://github.com/google/tcmalloc/blob/master/docs/tuning.md
-set(DEBUG_FLAGS "-g -DDEBUG -mavx2 -mavx -mbmi -mbmi2 ${VALUE_FLAG} -fsanitize=address")
-set(OPTIMIZE_FLAGS "-march=native -mavx2 -mavx -mbmi -mbmi2 -O3 -funroll-loops -DNDEBUG -fno-inline")
+set(DEBUG_FLAGS "-O0 -DDEBUG -mavx2 -mavx -mbmi -mbmi2")# -fsanitize=address")
+set(OPTIMIZE_FLAGS "-march=native -mavx2 -mavx -mbmi -mbmi2 -O3 -funroll-loops -DNDEBUG")# -fno-inline")
 set(SANITIZER_FLAGS -fsanitize=address -fno-omit-frame-pointer)
 set(GCC_HELPER_FLAGS -fvar-tracking-assignments)
-
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    # if using GCC
-    set(DEBUG_FLAGS "${DEBUG_FLAGS} ${GCC_HELPER_FLAGS} -O0 ")
-endif()
 
 # Set additionally our own debug/optimisation compiler/linkage flags. Maybe not he nicest way, but by far the easiest.
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${DEBUG_FLAGS}")

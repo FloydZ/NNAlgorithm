@@ -114,9 +114,11 @@ def compute_time(n, lam, w, r, N, d):
 
     return theta*n
 
+
+# TODO compute intermediate list size
 n = 256
-lam = 1 << 16
-w = 14
+lam = 1 << 18
+w = 16
 r, N, d, k = compute_optimal_params(n, lam, w)
 print("r", r, "N", N, "d", d)
 

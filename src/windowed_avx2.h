@@ -363,8 +363,8 @@ public:
 		generate_random_lists(L2);
 
 		// generate solution:
-		solution_l = 1;//fastrandombytes_uint64() % LIST_SIZE;
-		solution_r = 0;//fastrandombytes_uint64() % LIST_SIZE;
+		solution_l = fastrandombytes_uint64() % LIST_SIZE;
+		solution_r = fastrandombytes_uint64() % LIST_SIZE;
 		//std::cout << "sols at: " << solution_l << " " << solution_r << "\n";
 
 		if constexpr (EXACT) {
@@ -847,7 +847,7 @@ public:
 			const uint32_t *ptr_r = (uint32_t *)L2;
 
 			for (size_t j = s2; j < s2+(e2+7)/8; ++j, ptr_r += 16) {
-				const __m256i ri = _mm256_i32gather_epi32(ptr_r, loadr, 8);
+				const __m256i ri = _mm256_i32gather_epi32((const int *)ptr_r, loadr, 8);
 				const int m = compare_256_32(li, ri);
 
 				if (m) {
@@ -959,7 +959,7 @@ public:
 			T *ptr_r = (T *)L2;
 
 			for (size_t j = s2; j < s2+(e2+3)/4; ++j, ptr_r += 4) {
-				const __m256i ri = _mm256_i32gather_epi64(ptr_r, loadr, stride);
+				const __m256i ri = _mm256_i32gather_epi64((const long long int *)ptr_r, loadr, stride);
 				const int m = compare_256_64<true>(li, ri);
 
 				if (m) {
@@ -1330,7 +1330,7 @@ public:
 			/// li[1] = L[1][0]
 			/// li[2] = L[0][1]
 			/// ...
-			#pragma unroll
+			//#pragma unroll
 			for (uint32_t ui = 0; ui < u; ui++) {
 				li[ui + 0*u] = _mm256_set1_epi64x(L1[i + ui][0]);
 				li[ui + 1*u] = _mm256_set1_epi64x(L1[i + ui][1]);
@@ -1344,7 +1344,7 @@ public:
 			T *ptr_r = (T *)L2;
 
 			for (size_t j = s2; j < s2+(e2+3)/4; ++j, ptr_r += 16) {
-				#pragma unroll
+				//#pragma unroll
 				for (uint32_t mi = 0; mi < u; mi++) {
 					const __m256i ri = _mm256_i32gather_epi64(ptr_r, loadr1, 8);
 					const uint32_t tmp  = compare_256_64(li[0 * u + mi], ri);
@@ -1392,13 +1392,14 @@ public:
 
 				m1s_tmp = _mm256_movemask_ps((__m256) LOAD256((__m256i *)m1s));
 				if (m1s_tmp) {
+					ASSERT(__builtin_popcount(m1s_tmp) == 1);
 					const uint32_t m1s_ctz = __builtin_ctz(m1s_tmp);
 					const uint32_t bla = __builtin_ctz(m1s[m1s_ctz]);
 					const size_t iprime = i + m1s_ctz;
 					const size_t jprime = j*4 + bla;
 
-					if (compare_u64_ptr((T *)(L1 + i), (T *)(L2 + jprime))) {
-						found_solution(i, jprime);
+					if (compare_u64_ptr((T *)(L1 + iprime), (T *)(L2 + jprime))) {
+						found_solution(iprime, jprime);
 					}
 				}
 			}
@@ -1792,13 +1793,14 @@ public:
 			const uint32_t ctz1 = __builtin_ctz(m1sx);
 			const uint32_t ctz = off + ctz1;
 			const uint32_t m1sc = m1s[ctz];
+			const uint32_t inner_ctz = __builtin_ctz(m1sc);
 
 			const uint32_t test_j = ctz % 4;
-			const uint32_t test_inner_j = ctz / 16;
+			const uint32_t test_inner = (inner_ctz + (ctz / 16)) % 4;
 			const uint32_t test_i = (ctz % 16)/4;
 
-			const uint32_t off_l = test_i * 4;
-			const uint32_t off_r = test_j * 4 + test_inner_j;
+			const uint32_t off_l = test_i * 4 + inner_ctz;
+			const uint32_t off_r = test_j * 4 + test_inner;
 
 			const T *test_tl = ptr_l + off_l*4;
 			const T *test_tr = ptr_r + off_r*4;
@@ -1844,7 +1846,7 @@ public:
 
 			T *ptr_r = (T *)L2;
 
-			#pragma unroll 4
+			//#pragma unroll 4
 			for (size_t j = s1; j < s2 + e2; j += 16, ptr_r += 64) {
 				__m256i r1 = _mm256_i32gather_epi64(ptr_r +  0, loadr1, 8);
 				__m256i r2 = _mm256_i32gather_epi64(ptr_r + 16, loadr1, 8);
@@ -1919,7 +1921,8 @@ public:
 		} else if constexpr (128 < n and n <= 256) {
 			// TODO optimal value
 			if (e1 < 10 && e2 < 10) {
-				bruteforce_avx2_256(e1, e2);
+				// bruteforce_avx2_256(e1, e2);
+				bruteforce_avx2_256_64_4x4(e1, e2);
 				return;
 			}
 			
@@ -1983,7 +1986,7 @@ public:
 	}
 
 	/// copies `from` to `to` if the bit in `gt_mask` is set.
-	/// \param gt_mask
+	/// \param wt int mask selecting the upper elements to shift down
 	/// \param to
 	/// \param from
 	/// \return
@@ -2005,6 +2008,24 @@ public:
 		return nctr;
 	}
 
+	/// same as `swap` with the difference that this functions is swapping
+	/// based on the count trailing bits functions.
+	/// \param wt bit mask selecting the `from` elements
+	/// \param to swp to
+	/// \param from
+	/// \return number of elements swapped
+	size_t swap_ctz(int wt, Element *to, Element *from) {
+		uint32_t nctr = 0;
+		const uint32_t bit_limit = __builtin_popcount(wt);
+		for (uint32_t i = 0; i < bit_limit; ++i) {
+			const uint32_t pos = __builtin_ctz(wt);
+			std::swap(to[i], from[pos]);
+
+			wt ^= 1u << pos;
+		}
+
+		return bit_limit;
+	}
 	/// NOTE: assumes T=uint64
 	/// NOTE: only matches weight dk on uint32
 	/// \param: e1 end index
@@ -2058,6 +2079,53 @@ public:
 	/// \param: e1 end index
 	/// \param: random value z
 	template<const uint32_t limb>
+	size_t avx2_sort_nn_on64_simple(const size_t e1,
+							 	   	const uint64_t z,
+							 	   	Element *L) {
+		//ASSERT(n <= 64);
+		//ASSERT(n > 32);
+		ASSERT(limb <= ELEMENT_NR_LIMBS);
+
+		/// just a shorter name, im lazy.
+		constexpr uint32_t enl = ELEMENT_NR_LIMBS;
+
+		size_t i = 0;
+		alignas(32) const __m256i z256 = _mm256_set1_epi64x(z);
+		alignas(32) const __m256i offset = _mm256_setr_epi64x(0*enl, 1*enl, 2*enl, 3*enl);
+
+		size_t ctr = 0;
+
+		/// NOTE: i need 2 ptr tracking the current position, because of the
+		/// limb shift
+		Element *ptr = (Element *)(((uint8_t *)L) + limb*8);
+		Element *org_ptr = L;
+
+		// #pragma unroll 4
+		for (; i < (e1+3)/4; i++, ptr += 4, org_ptr += 4) {
+			const __m256i ptr_tmp = _mm256_i64gather_epi64(ptr, offset, 8);
+			const __m256i tmp = _mm256_xor_si256(ptr_tmp, z256);
+			const __m256i tmp_pop = popcount_avx2_64(tmp);
+
+			//const __m256i gt_mask = _mm256_cmpgt_epi64(mask, tmp_pop);
+			const __m256i gt_mask = _mm256_cmpeq_epi64(avx_nn_weight64, tmp_pop);
+			const int wt = _mm256_movemask_pd((__m256d) gt_mask);
+			ASSERT(wt < 1u << 4u);
+			// now `wt` contains the incises of matches. Meaning if bit 1 in `wt` is set (and bit 0 not),
+			// we need to swap the second (0 indexed) uint64_t from L + ctr with the first element from L + i.
+			// The core problem is, that we need 64bit indices and not just 32bit
+			if (wt) {
+				ctr += swap<4>(wt, L + ctr, org_ptr);
+			}
+		}
+
+
+		return ctr;
+	}
+	/// NOTE: assumes T=uint64
+	/// NOTE: only matches weight dk on uint64_t
+	/// \param: e1 end index
+	/// \param: random value z
+	template<const uint32_t limb>
 	size_t avx2_sort_nn_on64(const size_t e1,
 					    	 const uint64_t z,
 							 Element *L) {
@@ -2068,7 +2136,7 @@ public:
 		/// just a shorter name, im lazy.
 		constexpr uint32_t enl = ELEMENT_NR_LIMBS;
 
-		const size_t s1 = 0;
+		size_t i = 0;
 		alignas(32) const __m256i z256 = _mm256_set1_epi64x(z);
 		alignas(32) const __m256i offset = _mm256_setr_epi64x(0*enl, 1*enl, 2*enl, 3*enl);
 		                                         
@@ -2079,8 +2147,66 @@ public:
 		Element *ptr = (Element *)(((uint8_t *)L) + limb*8);
 		Element *org_ptr = L;
 
-		#pragma unroll 4
-		for (size_t i = s1; i < (e1+3)/4; i++, ptr += 4, org_ptr += 4) {
+		constexpr uint32_t  u = 8;
+		for (; i+u < e1; i += (4*u), ptr += (4*u), org_ptr += (4*u)) {
+			__m256i ptr_tmp0 = _mm256_i64gather_epi64(ptr +  0, offset, 8);
+			ptr_tmp0 = _mm256_xor_si256(ptr_tmp0, z256);
+			__m256i ptr_tmp1 = _mm256_i64gather_epi64(ptr +  4, offset, 8);
+			ptr_tmp1 = _mm256_xor_si256(ptr_tmp1, z256);
+			__m256i ptr_tmp2 = _mm256_i64gather_epi64(ptr +  8, offset, 8);
+			ptr_tmp2 = _mm256_xor_si256(ptr_tmp2, z256);
+			__m256i ptr_tmp3 = _mm256_i64gather_epi64(ptr + 12, offset, 8);
+			ptr_tmp3 = _mm256_xor_si256(ptr_tmp3, z256);
+			__m256i ptr_tmp4 = _mm256_i64gather_epi64(ptr + 16, offset, 8);
+			ptr_tmp4 = _mm256_xor_si256(ptr_tmp4, z256);
+			__m256i ptr_tmp5 = _mm256_i64gather_epi64(ptr + 20, offset, 8);
+			ptr_tmp5 = _mm256_xor_si256(ptr_tmp5, z256);
+			__m256i ptr_tmp6 = _mm256_i64gather_epi64(ptr + 24, offset, 8);
+			ptr_tmp6 = _mm256_xor_si256(ptr_tmp6, z256);
+			__m256i ptr_tmp7 = _mm256_i64gather_epi64(ptr + 28, offset, 8);
+			ptr_tmp7 = _mm256_xor_si256(ptr_tmp7, z256);
+
+			uint32_t wt = 0;
+			__m256i tmp_pop = popcount_avx2_64(ptr_tmp0);
+			__m256i gt_mask = _mm256_cmpeq_epi64(avx_nn_weight64, tmp_pop);
+			wt = _mm256_movemask_pd((__m256d) gt_mask);
+
+			tmp_pop = popcount_avx2_64(ptr_tmp1);
+			gt_mask = _mm256_cmpeq_epi64(avx_nn_weight64, tmp_pop);
+			wt ^= _mm256_movemask_pd((__m256d) gt_mask) << 4u;
+
+			tmp_pop = popcount_avx2_64(ptr_tmp2);
+			gt_mask = _mm256_cmpeq_epi64(avx_nn_weight64, tmp_pop);
+			wt ^= _mm256_movemask_pd((__m256d) gt_mask) << 8u;
+
+			tmp_pop = popcount_avx2_64(ptr_tmp3);
+			gt_mask = _mm256_cmpeq_epi64(avx_nn_weight64, tmp_pop);
+			wt ^= _mm256_movemask_pd((__m256d) gt_mask) << 12u;
+
+			tmp_pop = popcount_avx2_64(ptr_tmp4);
+			gt_mask = _mm256_cmpeq_epi64(avx_nn_weight64, tmp_pop);
+			wt ^= _mm256_movemask_pd((__m256d) gt_mask) << 16u;
+
+			tmp_pop = popcount_avx2_64(ptr_tmp5);
+			gt_mask = _mm256_cmpeq_epi64(avx_nn_weight64, tmp_pop);
+			wt ^= _mm256_movemask_pd((__m256d) gt_mask) << 20u;
+
+			tmp_pop = popcount_avx2_64(ptr_tmp6);
+			gt_mask = _mm256_cmpeq_epi64(avx_nn_weight64, tmp_pop);
+			wt ^= _mm256_movemask_pd((__m256d) gt_mask) << 24u;
+
+			tmp_pop = popcount_avx2_64(ptr_tmp7);
+			gt_mask = _mm256_cmpeq_epi64(avx_nn_weight64, tmp_pop);
+			wt ^= _mm256_movemask_pd((__m256d) gt_mask) << 28u;
+			//ASSERT(uint64_t(wt) < (1ull << 32ull));
+
+			if (wt) {
+				ctr += swap_ctz(wt, L + ctr, org_ptr);
+			}
+		}
+
+		// #pragma unroll 4
+		for (; i < (e1+3)/4; i++, ptr += 4, org_ptr += 4) {
 			const __m256i ptr_tmp = _mm256_i64gather_epi64(ptr, offset, 8);
 			const __m256i tmp = _mm256_xor_si256(ptr_tmp, z256);
 			const __m256i tmp_pop = popcount_avx2_64(tmp);
@@ -2088,7 +2214,7 @@ public:
 			//const __m256i gt_mask = _mm256_cmpgt_epi64(mask, tmp_pop);
 			const __m256i gt_mask = _mm256_cmpeq_epi64(avx_nn_weight64, tmp_pop);
 			const int wt = _mm256_movemask_pd((__m256d) gt_mask);
-
+			ASSERT(wt < 1u << 4u);
 			// now `wt` contains the incises of matches. Meaning if bit 1 in `wt` is set (and bit 0 not),
 			// we need to swap the second (0 indexed) uint64_t from L + ctr with the first element from L + i.
 			// The core problem is, that we need 64bit indices and not just 32bit
@@ -2159,7 +2285,7 @@ public:
 	}
 
 	void avx2_nn(const size_t e1, const size_t e2) {
-		config.print();
+		//config.print();
 
 		for (size_t i = 0; i < N; ++i) {
 			if constexpr(32 < n and n <= 256) {

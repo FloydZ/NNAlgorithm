@@ -14,6 +14,8 @@ stdenv.mkDerivation {
 	clang 
 	ripgrep
 	ninja
+	linuxKernel.packages.linux_latest_libre.perf
+	flamegraph
   ];
 
   # buildPhase = "c++ -o main main.cpp -lPocoFoundation -lboost_system";
