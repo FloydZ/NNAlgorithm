@@ -399,28 +399,28 @@ TEST(NearestNeighborAVX, avx2_sort_nn_on64) {
 
 TEST(NearestNeighborAVX, MO1284Params_n256_r4) {
 	constexpr size_t LS = 1u << 18u;
-	constexpr static WindowedAVX2_Config config{256, 4, 300, LS, 28, 16, 0, 512};
+	constexpr static WindowedAVX2_Config config{256, 4, 300, LS, 22, 16, 0, 512};
 	WindowedAVX2<config> algo{};
 	algo.generate_random_instance();
 
 	constexpr uint32_t nr_tries = 10;
-	bool sols[nr_tries] = {0};
+	uint32_t sols= 0;
 	for (size_t i = 0; i < nr_tries; i++) {
 		algo.avx2_nn(LS, LS);
-		// sols[i] = algo.solutions_nr;
-		// algo.solutions_nr = 0;
+		sols += algo.solutions_nr;
+		algo.solutions_nr = 0;
 
 		free(algo.L1);
 		free(algo.L2);
 		algo.generate_random_instance();
 	}
 
-	EXPECT_EQ(algo.solutions_nr, nr_tries);
+	EXPECT_EQ(sols, nr_tries);
 	EXPECT_EQ(algo.all_solutions_correct(), true);
 }
 
 TEST(NearestNeighborAVX, Dev) {
-	constexpr static WindowedAVX2_Config config{256, 4, 400, 1u<<14, 22, 16, 0, 512};
+	constexpr static WindowedAVX2_Config config{256, 4, 500, 1u<<14, 22, 16, 0, 512};
 	WindowedAVX2<config> algo{};
 	algo.run();
 	algo.bench();

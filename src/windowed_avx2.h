@@ -359,8 +359,8 @@ public:
 		constexpr size_t list_size = (ELEMENT_NR_LIMBS * LIST_SIZE * sizeof(T));
 		L1 = (Element *)aligned_alloc(64, list_size);
 		L2 = (Element *)aligned_alloc(64, list_size);
-		assert(L1);
-		assert(L2);
+		ASSERT(L1);
+		ASSERT(L2);
 
 		generate_random_lists(L1);
 		generate_random_lists(L2);
@@ -2305,7 +2305,9 @@ public:
 	void avx2_nn(const size_t e1, const size_t e2) {
 		//config.print();
 
-		for (size_t i = 0; i < N; ++i) {
+		constexpr size_t P = n;//256ull*256ull*256ull*256ull;
+
+		for (size_t i = 0; i < P*N; ++i) {
 			if constexpr(32 < n and n <= 256) {
 				avx2_nn_internal<r>(e1, e2);
 	 		} else {
