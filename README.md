@@ -1,3 +1,5 @@
+This project is now archived. It was merged with my [cryptanalysislib](https://github.com/FloydZ/cryptanalysislib)
+
 About 
 -----
 This repository contains a header only implementation of the paper [A faster algorithm for finding closet pairs in hamming metric](https://arxiv.org/abs/2102.02597). 
