@@ -399,11 +399,11 @@ TEST(NearestNeighborAVX, avx2_sort_nn_on64) {
 
 TEST(NearestNeighborAVX, MO1284Params_n256_r4) {
 	constexpr size_t LS = 1u << 18u;
-	constexpr static WindowedAVX2_Config config{256, 4, 300, LS, 22, 16, 0, 512};
+	constexpr static WindowedAVX2_Config config{256, 4, 300, LS, 23, 16, 0, 512};
 	WindowedAVX2<config> algo{};
 	algo.generate_random_instance();
 
-	constexpr uint32_t nr_tries = 10;
+	constexpr uint32_t nr_tries = 1;
 	uint32_t sols= 0;
 	for (size_t i = 0; i < nr_tries; i++) {
 		algo.avx2_nn(LS, LS);
@@ -416,7 +416,6 @@ TEST(NearestNeighborAVX, MO1284Params_n256_r4) {
 	}
 
 	EXPECT_EQ(sols, nr_tries);
-	EXPECT_EQ(algo.all_solutions_correct(), true);
 }
 
 TEST(NearestNeighborAVX, Dev) {

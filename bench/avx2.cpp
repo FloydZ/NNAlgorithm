@@ -6,10 +6,10 @@
 #define ENABLE_BENCHMARK
 #include "windowed_avx2.h"
 
-constexpr size_t LS = 1u << 18u;
+constexpr size_t LS = 1u << 20u;
 constexpr size_t d = 16;
 constexpr size_t dk = 22;
-constexpr static WindowedAVX2_Config config{256, 4, 200, LS, dk, d, 0, 512};
+constexpr static WindowedAVX2_Config config{256, 4, 300, LS, dk, d, 0, 512};
 WindowedAVX2<config> algo{};
 
 // Define another benchmark
@@ -36,8 +36,8 @@ static void BM_NearestNeighborAVX(benchmark::State& state) {
 }
 
 //BENCHMARK(BM_avx2_256_32_8x8)->RangeMultiplier(2)->Range(128, 1u<<16)->Complexity();
-BENCHMARK(BM_avx2_256_64_4x4)->RangeMultiplier(2)->Range(1024, 1u<<16)->Complexity();
-BENCHMARK(BM_NearestNeighborAVX)->RangeMultiplier(2)->Range(1024, 1u<<20)->Complexity();
+BENCHMARK(BM_avx2_256_64_4x4)->RangeMultiplier(2)->Range(1024, 1u<<18)->Complexity();
+BENCHMARK(BM_NearestNeighborAVX)->RangeMultiplier(2)->Range(1024, 1u<<18)->Complexity();
 
 int main(int argc, char** argv) {
 	random_seed(time(NULL));

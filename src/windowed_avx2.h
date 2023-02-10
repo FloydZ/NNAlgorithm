@@ -244,8 +244,10 @@ public:
 	// only exact matching in the bruteforce step, if set to `true`
 	constexpr static bool EXACT = false;
 
-	// Array indicating the window boundaries.
-	std::vector<uint64_t> buckets_windows{0, 32};
+	/// TODO explain
+	constexpr static bool NN_EQUAL = false;//true;
+	constexpr static bool NN_LOWER = true;
+	constexpr static bool NN_BOUNDS = false;
 
 	/// Base types
 	using T = uint64_t; // NOTE do not change.
@@ -577,8 +579,11 @@ public:
 	//	return _mm256_and_si256(_mm256_add_epi8(pop1, pop2), low_mask);
 	//}
 
-	alignas(32) const __m256i avx_nn_weight32 = _mm256_set1_epi32(dk);
-	alignas(32) const __m256i avx_nn_weight64 = _mm256_set1_epi64x(dk);
+	alignas(32) const __m256i avx_nn_weight32 = _mm256_set1_epi32 (dk+NN_LOWER+epsilon);
+	alignas(32) const __m256i avx_nn_weight64 = _mm256_set1_epi64x(dk+NN_LOWER+epsilon);
+
+	alignas(32) const __m256i avx_nn_weight_lower32 = _mm256_set1_epi32(dk-epsilon);
+	alignas(32) const __m256i avx_nn_weight_lower64 = _mm256_set1_epi64x(dk-epsilon);
 
 	alignas(32) const __m256i avx_weight32 = _mm256_set1_epi32(d+1);
 	alignas(32) const __m256i avx_weight64 = _mm256_set1_epi64x(d+1);
@@ -1950,8 +1955,8 @@ public:
 
 			// generic best implementations for every weight
 
-			bruteforce_256(e1, e2);
-			//bruteforce_avx2_256_64_4x4(e1, e2);
+			//bruteforce_256(e1, e2);
+			bruteforce_avx2_256_64_4x4(e1, e2);
 		} else {
 			ASSERT(false);
 		}
@@ -2042,6 +2047,30 @@ public:
 		}
 
 		return bit_limit;
+	}
+
+	/// executes the comparison operator in the NN subroutine
+	/// \param tmp
+	/// \return
+	uint32_t compare_nn_on64(const __m256i tmp) {
+		static_assert(NN_EQUAL + NN_LOWER + NN_BOUNDS == 1);
+		if constexpr (NN_EQUAL) {
+			static_assert(epsilon == 0);
+			const __m256i gt_mask = _mm256_cmpeq_epi64(avx_nn_weight64, tmp);
+			return _mm256_movemask_pd((__m256d) gt_mask);
+		}
+		if constexpr (NN_LOWER) {
+			static_assert(epsilon == 0);
+			const __m256i gt_mask = _mm256_cmpgt_epi64(avx_nn_weight64, tmp);
+			return _mm256_movemask_pd((__m256d) gt_mask);
+		}
+		if constexpr (NN_BOUNDS) {
+			static_assert(epsilon > 0);
+			static_assert(epsilon < dk);
+			const __m256i lt_mask = _mm256_cmpgt_epi64(avx_nn_weight_lower64, tmp);
+			const __m256i gt_mask = _mm256_cmpgt_epi64(avx_nn_weight64, tmp);
+			return _mm256_movemask_pd((__m256d) _mm256_and_si256(lt_mask, gt_mask));
+		}
 	}
 
 	/// NOTE: assumes T=uint64
@@ -2186,36 +2215,28 @@ public:
 
 			uint32_t wt = 0;
 			__m256i tmp_pop = popcount_avx2_64(ptr_tmp0);
-			__m256i gt_mask = _mm256_cmpeq_epi64(avx_nn_weight64, tmp_pop);
-			wt = _mm256_movemask_pd((__m256d) gt_mask);
+			wt = compare_nn_on64(tmp_pop);
 
 			tmp_pop = popcount_avx2_64(ptr_tmp1);
-			gt_mask = _mm256_cmpeq_epi64(avx_nn_weight64, tmp_pop);
-			wt ^= _mm256_movemask_pd((__m256d) gt_mask) << 4u;
+			wt ^= compare_nn_on64(tmp_pop) << 4u;
 
 			tmp_pop = popcount_avx2_64(ptr_tmp2);
-			gt_mask = _mm256_cmpeq_epi64(avx_nn_weight64, tmp_pop);
-			wt ^= _mm256_movemask_pd((__m256d) gt_mask) << 8u;
+			wt ^= compare_nn_on64(tmp_pop) << 8u;
 
 			tmp_pop = popcount_avx2_64(ptr_tmp3);
-			gt_mask = _mm256_cmpeq_epi64(avx_nn_weight64, tmp_pop);
-			wt ^= _mm256_movemask_pd((__m256d) gt_mask) << 12u;
+			wt ^= compare_nn_on64(tmp_pop) << 12u;
 
 			tmp_pop = popcount_avx2_64(ptr_tmp4);
-			gt_mask = _mm256_cmpeq_epi64(avx_nn_weight64, tmp_pop);
-			wt ^= _mm256_movemask_pd((__m256d) gt_mask) << 16u;
+			wt ^= compare_nn_on64(tmp_pop) << 16u;
 
 			tmp_pop = popcount_avx2_64(ptr_tmp5);
-			gt_mask = _mm256_cmpeq_epi64(avx_nn_weight64, tmp_pop);
-			wt ^= _mm256_movemask_pd((__m256d) gt_mask) << 20u;
+			wt ^= compare_nn_on64(tmp_pop) << 20u;
 
 			tmp_pop = popcount_avx2_64(ptr_tmp6);
-			gt_mask = _mm256_cmpeq_epi64(avx_nn_weight64, tmp_pop);
-			wt ^= _mm256_movemask_pd((__m256d) gt_mask) << 24u;
+			wt ^= compare_nn_on64(tmp_pop) << 24u;
 
 			tmp_pop = popcount_avx2_64(ptr_tmp7);
-			gt_mask = _mm256_cmpeq_epi64(avx_nn_weight64, tmp_pop);
-			wt ^= _mm256_movemask_pd((__m256d) gt_mask) << 28u;
+			wt ^= compare_nn_on64(tmp_pop) << 28u;
 			//ASSERT(uint64_t(wt) < (1ull << 32ull));
 
 			if (wt) {
@@ -2305,7 +2326,7 @@ public:
 	void avx2_nn(const size_t e1, const size_t e2) {
 		//config.print();
 
-		constexpr size_t P = n;//256ull*256ull*256ull*256ull;
+		constexpr size_t P = 1;//n;//256ull*256ull*256ull*256ull;
 
 		for (size_t i = 0; i < P*N; ++i) {
 			if constexpr(32 < n and n <= 256) {
